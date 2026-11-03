@@ -2,6 +2,12 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
   xmlns:xhtml="http://www.w3.org/1999/xhtml">
   <url>
+    <loc>http://0.0.0.0:4096/games/</loc>
+    <lastmod>2026-11-03T00:00:00+00:00</lastmod>
+  </url><url>
+    <loc>http://0.0.0.0:4096/</loc>
+    <lastmod>2026-11-03T00:00:00+00:00</lastmod>
+  </url><url>
     <loc>http://0.0.0.0:4096/tags/</loc>
     <lastmod>2026-11-02T00:00:00+00:00</lastmod>
   </url><url>
@@ -15,9 +21,6 @@
     <lastmod>2026-11-02T00:00:00+00:00</lastmod>
   </url><url>
     <loc>http://0.0.0.0:4096/posts/%E6%B5%8F%E8%A7%88%E5%99%A8mcp%E5%AE%9E%E6%B5%8B%E6%8A%A5%E5%91%8A/</loc>
-    <lastmod>2026-11-02T00:00:00+00:00</lastmod>
-  </url><url>
-    <loc>http://0.0.0.0:4096/</loc>
     <lastmod>2026-11-02T00:00:00+00:00</lastmod>
   </url><url>
     <loc>http://0.0.0.0:4096/posts/dsh-subagent%E6%A8%A1%E5%9E%8B%E9%80%89%E6%8B%A9%E5%AE%9E%E6%B5%8B%E6%8A%A5%E5%91%8A/</loc>

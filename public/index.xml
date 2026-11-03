@@ -10,9 +10,16 @@
 		
 		
 		
-			<lastBuildDate>Mon, 02 Nov 2026 00:00:00 +0000</lastBuildDate>
+			<lastBuildDate>Tue, 03 Nov 2026 00:00:00 +0000</lastBuildDate>
 		
 			<atom:link href="http://0.0.0.0:4096/index.xml" rel="self" type="application/rss+xml" />
+			<item>
+				<title>小游戏</title>
+				<link>http://0.0.0.0:4096/games/</link>
+				<pubDate>Tue, 03 Nov 2026 00:00:00 +0000</pubDate>
+				<guid>http://0.0.0.0:4096/games/</guid>
+				<description>&lt;h2 id=&#34;坦克动荡&#34;&gt;坦克动荡&lt;/h2&gt;&#xA;&lt;p&gt;Canvas 写的双人对战坦克游戏，WASD + 方向键操作。&lt;/p&gt;&#xA;&lt;div class=&#34;game-actions&#34;&gt;&#xA;&lt;p&gt;&lt;a href=&#34;./tank.html&#34; target=&#34;_blank&#34; class=&#34;game-btn&#34;&gt;新标签页打开&lt;/a&gt;&lt;/p&gt;&#xA;&lt;p&gt;&lt;a href=&#34;#play-inline&#34; class=&#34;game-btn game-btn-primary&#34;&gt;在下方直接玩&lt;/a&gt;&lt;/p&gt;&#xA;&lt;/div&gt;&#xA;&lt;iframe id=&#34;play-inline&#34; src=&#34;./tank.html&#34; class=&#34;game-frame&#34; title=&#34;坦克动荡&#34;&gt;&lt;/iframe&gt;</description>
+			</item>
 			<item>
 				<title>关于</title>
 				<link>http://0.0.0.0:4096/about/</link>
