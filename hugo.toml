@@ -31,10 +31,3 @@ pagination.pagerSize = 20
     lineNos = false
     tabWidth = 4
 
-[[module.mounts]]
-  source = "content"
-  target = "content"
-
-[[module.mounts]]
-  source = "/data/data/com.termux/files/home/storage/shared/Documents/blog"
-  target = "content/posts"
