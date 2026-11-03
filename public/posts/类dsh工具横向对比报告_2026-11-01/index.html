@@ -1,0 +1,494 @@
+<!DOCTYPE html>
+<html lang="zh-CN"><head><script src="/livereload.js?mindelay=10&amp;v=2&amp;port=4096&amp;path=livereload" data-no-instant defer></script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>类 DSH 的 AI 开发/对话客户端横向对比（调研日：2026-11-01） · 可能是一个凑数的blog?(但显然不是)</title>
+  <meta name="description" content="1. 「像 dsh 的软件」本质分四类形态：终端 CLI Agent（与 dsh 同类）、IDE 扩展（宿主是 VS Code）、自托管 Web UI、桌面客户端/AI IDE。dsh 属于第一类，插">
+  <script>
+    
+    (function () {
+      try {
+        var saved = localStorage.getItem('theme');
+        if (saved === 'dark' || (!saved && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+          document.documentElement.classList.add('dark');
+        }
+      } catch (e) {}
+    })();
+  </script>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='18' fill='%23B45309'/%3E%3Ctext x='50' y='68' font-size='52' text-anchor='middle' fill='%23FFFBEF' font-family='serif' font-weight='bold'%3Ez%3C/text%3E%3C/svg%3E">
+  <link rel="stylesheet" href="/css/main.css">
+  </head>
+<body>
+<div class="wrap"><header class="site">
+  <div class="brand">
+    <a href="/">可能是一个凑数的blog?(但显然不是)<span class="dot">.</span></a>
+  </div>
+  <p class="tagline">sha包原话:一台手机，几行代码，一些在 Termux 和 AidLux 里折腾出来的零碎记录。关于编程、网络，和一切让我着迷的小实验。
+你说这装不装，但我又不知道该写点啥在这。</p>
+  <nav class="top">
+    <a href="/">首页</a>
+    
+      <a href="/posts/">归档</a>
+    
+      <a href="/about/">关于</a>
+    
+      <a href="/index.xml">RSS</a>
+    
+    <button class="theme-toggle" id="themeToggle" aria-label="切换夜间模式" title="切换夜间模式">
+      <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+      </svg>
+      <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="12" r="5"/>
+        <line x1="12" y1="1" x2="12" y2="3"/>
+        <line x1="12" y1="21" x2="12" y2="23"/>
+        <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/>
+        <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
+        <line x1="1" y1="12" x2="3" y2="12"/>
+        <line x1="21" y1="12" x2="23" y2="12"/>
+        <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/>
+        <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
+      </svg>
+    </button>
+  </nav>
+</header>
+<main>
+<article class="post">
+  <header class="post-header">
+    <h1>类 DSH 的 AI 开发/对话客户端横向对比（调研日：2026-11-01）</h1>
+    <div class="meta">
+      <span>2026-11-01</span>
+      <span>约 6 分钟读完</span>
+      
+        <span>
+          <a class="tag-inline" href="/tags/%E5%AF%B9%E8%AF%9D%E6%8A%A5%E5%91%8A/">对话报告</a>
+        </span>
+      
+    </div>
+  </header>
+
+  <div class="post-body">
+    <h1 id="类-dsh-的-ai-开发对话客户端横向对比调研日2026-11-01">类 DSH 的 AI 开发/对话客户端横向对比（调研日：2026-11-01）</h1>
+<blockquote>
+<p>基准：dsh（DeepSeek Harness）本体 <code>@deepseek-ai/dsh</code> v0.2.1-rc.5（预发布）[1]；官方 npm 目录包 <code>dsh-plugin-catalog</code> 收录 4092 插件，仅 27.4% 标注 engines.dsh 版本要求 [2]；dshmk.com 收录 2500 插件、开发工具类占 56% [3]。安装 <code>dsh plugin add &lt;spec&gt;</code>，插件本质是 npm 包。
+下文所有数字均附来源编号，见文末「来源索引」。</p>
+</blockquote>
+<hr>
+<h2 id="一核心结论">一、核心结论</h2>
+<ol>
+<li><strong>「像 dsh 的软件」本质分四类形态</strong>：终端 CLI Agent（与 dsh 同类）、IDE 扩展（宿主是 VS Code）、自托管 Web UI、桌面客户端/AI IDE。dsh 属于第一类，插件生态数字（4092）虽大，但质量信号最弱——仅 27.4% 插件标注版本要求，兼容性风险高 [2]；真正生态成熟的是 claude code（官方 marketplace）[13]、openwebui（六类插件机制 + 数百社区工具）[33]、cursor（直接继承 VS Code 市场）[53]。</li>
+<li><strong>CLI Agent 梯队</strong>：claude code（15.3 万 star、Anthropic 官方、按日发版）&gt; codex cli（13.1 万 star、OpenAI 官方、Rust 二进制）&gt; aider（5.0 万 star、Apache-2.0、支持本地模型）&gt; opencode（3.4 万 star、MIT、多模型接入）。claude code 与 codex 均为官方产品但模型绑定强（Claude 系 / OpenAI 系），aider 与 opencode 是「自带任意 Key + 本地模型」的自由派 [8][15][4][11]。</li>
+<li><strong>许可自由度差异大</strong>：MIT/Apache-2.0 全开放（opencode、aider、codex cli、cline、continue、librechat）；AGPL-3.0/GPL-3.0（cherry studio、chatbox）；<strong>claude code 源码可见但非 OSI 开源</strong>（npm 标注 &ldquo;SEE LICENSE IN README.md&rdquo;）[12]；openwebui（BSD-3 + 品牌条款）[31] 和 lobehub（Apache-2.0 + 衍生商用限制）[40] 的「开源」都有附加条件。</li>
+<li><strong>对本地模型（Ollama）支持</strong>：openwebui（本地模型优先）[33]、continue（Ollama 一等公民、AUTODETECT）[28]、cline（Ollama/LM Studio）[22]、aider（Ollama/llama）[10]、cherry studio（可完全离线）[45] 最友好；claude code / codex / cursor 基本绑定云端商业模型。</li>
+<li><strong>维护风险提示</strong>：aider 仅 1 个 PyPI maintainer（bus factor 高）[9]；continue 的 release tag 滞后主分支 4 个月 [29]；claude code open issues 15.7k、codex 24.3k（issue 洪流但官方维护密集）[11][15]；lobehub 的「30 万 Skills / 11 万 MCP」是官方营销口径、非仓库可验证数据 [42][43]。</li>
+<li><strong>按你的场景（全栈 + 多模型调试 + Linux 云电脑/沙箱 + Termux + Windows）</strong>：CLI 场景 dsh/opencode/aider 是主力（Termux 里跑 Node/Python CLI 最顺）；云电脑上 VS Code（code-server）装 cline/continue 承接 Agent 编程；自托管 Web UI 选 openwebui 管本地模型 + RAG；桌面端 cherry studio 是国产模型聚合最全的开源选项；cursor 性价比最低（订阅 $8/月起、闭源）[51]。</li>
+<li><strong>「DeepSeek 调用其他模型」是独立的一层，不在客户端里</strong>：此前调研确认编程工具（opencode/claude code）只支持手动切模型、无&quot;主模型自主调其他模型&quot;的原生能力，需要网关/路由/组队层补位。该层选型分四档：自建网关 <strong>LiteLLM</strong>（事实标准、Termux 可 pip）或 <strong>new-api</strong>（国内模型+计费、Go 静态二进制）；零部署用 <strong>OpenRouter</strong>（一个 key 聚合 500+ 模型）；&ldquo;DeepSeek 当主管组队&quot;最对口的是 <strong>deepseek-multi-agent-plugin</strong>（纯 Python 零依赖、49.6KB wheel）[65]；已在用 Claude Code/Codex 的省钱方案是 <strong>external-agents</strong>（MCP 配额池路由）[67]。<strong>RouteLLM 已停更（2024-08 起休眠）不建议上生产</strong> [64]。</li>
+</ol>
+<hr>
+<h2 id="二终端-cli-agent与-dsh-同类5-个">二、终端 CLI Agent（与 dsh 同类，5 个）</h2>
+<table>
+	<thead>
+			<tr>
+					<th>项目</th>
+					<th>形态·许可</th>
+					<th>当前版本</th>
+					<th>核心功能</th>
+					<th>插件生态</th>
+					<th>质量信号（star / 活跃度 / 背书）</th>
+					<th>适用场景</th>
+			</tr>
+	</thead>
+	<tbody>
+			<tr>
+					<td><strong>dsh</strong>（基准）</td>
+					<td>终端 CLI · 官方 npm 包 [1]</td>
+					<td>0.2.1-rc.5 预发布 [1]</td>
+					<td>DeepSeek 模型 harness，插件驱动</td>
+					<td>4092 插件（npm 目录包，仅 27.4% 标注版本要求）[2]；dshmk.com 收录 2500 个、开发工具 56% [3]</td>
+					<td>官方生态新、兼容性风险高 [2]</td>
+					<td>DeepSeek 官方生态尝鲜</td>
+			</tr>
+			<tr>
+					<td><strong>opencode</strong></td>
+					<td>终端 TUI + 桌面/IDE · <strong>MIT</strong> [4]</td>
+					<td>v1.19.5（2026-10-28）[5]</td>
+					<td>对话式改码、Agent 自主执行、shell、多文件补丁；多模型接入（可登 Copilot 账号）[7]</td>
+					<td>有插件/自定义 agent 体系，官方生态页仅 2 插件 + 1 agent 包，<strong>生态早期（个位数）</strong>[6]</td>
+					<td>33,568 star [4]；按周发版；SST/Anomaly 团队官方维护</td>
+					<td>要 MIT 自由许可 + 多模型 + TUI 体验的 power user</td>
+			</tr>
+			<tr>
+					<td><strong>aider</strong></td>
+					<td>纯终端 CLI · <strong>Apache-2.0</strong> [8]</td>
+					<td>v0.86.2（PyPI 2026-02-12）[9]</td>
+					<td>pair programming：repo map 代码库索引、自动 Git commit、BYO-Key；<strong>本地模型（Ollama/llama）</strong>[10]</td>
+					<td>无正式插件市场，靠 &ndash;model 与 .aider.conf.yml 配置扩展</td>
+					<td>49,794 star [8]；更新频率偏低、版本仍 0.x；单 maintainer（bus factor 风险）[9]</td>
+					<td>任意模型（含本地）+ 轻量自动提交工作流</td>
+			</tr>
+			<tr>
+					<td><strong>claude code</strong></td>
+					<td>终端 CLI · <strong>非 OSI 开源</strong>（源码可见）[12]</td>
+					<td>npm 2.1.316（2026-10-30）[12]</td>
+					<td>代码库理解、自主执行 routine 任务、GitHub Actions PR/issue 自动化 [14]</td>
+					<td><strong>官方插件 marketplace</strong>（/plugin 命令添加，official + community 市场）[13]</td>
+					<td><strong>153,407 star</strong> [11]；按日发版；Anthropic 官方背书最强</td>
+					<td>深度用 Claude 模型、要官方插件体系的团队</td>
+			</tr>
+			<tr>
+					<td><strong>codex cli</strong></td>
+					<td>终端 CLI（<strong>Rust</strong> 编写）· <strong>Apache-2.0</strong> [15]</td>
+					<td>rust-v0.165.0（2026-10-27）[16]</td>
+					<td>读改文件、跑命令、agent loop；沙箱隔离（bwrap/seatbelt）；<code>codex exec</code> 非交互 CI 模式 [17]</td>
+					<td><strong>无插件市场</strong>，约定式配置（AGENTS.md + config.toml）[17]</td>
+					<td><strong>130,544 star</strong> [15]；按周发版；OpenAI 官方</td>
+					<td>OpenAI 系模型 + 沙箱隔离 + CI 流水线</td>
+			</tr>
+	</tbody>
+</table>
+<hr>
+<h2 id="三ide-扩展与宿主3-个">三、IDE 扩展与宿主（3 个）</h2>
+<table>
+	<thead>
+			<tr>
+					<th>项目</th>
+					<th>形态·许可</th>
+					<th>当前版本</th>
+					<th>核心功能</th>
+					<th>插件生态</th>
+					<th>质量信号（star / 安装量 / 背书）</th>
+					<th>适用场景</th>
+			</tr>
+	</thead>
+	<tbody>
+			<tr>
+					<td><strong>VS Code</strong></td>
+					<td>IDE 宿主（非插件）· 源码 <strong>MIT</strong>，品牌发行版含私有条款 [21]</td>
+					<td>1.144.0（2026-10-28）[19]</td>
+					<td>本体不做 AI：IntelliSense/调试/Git；AI 全靠扩展加载 [18]</td>
+					<td><strong>Marketplace 扩展总数约 155,363 个</strong>（Gallery API 实测）[20]；Copilot/Cline/Continue 均以扩展入驻</td>
+					<td><strong>194,430 star</strong> [18]；每日提交；Microsoft 官方；头部扩展安装亿级 [20]</td>
+					<td>AI 编程选型的「底座」——先有 VS Code 再挑扩展</td>
+			</tr>
+			<tr>
+					<td><strong>cline</strong></td>
+					<td>VS Code 扩展 · <strong>Apache-2.0</strong> [22]</td>
+					<td>v4.1.26（2026-10-26）[24]</td>
+					<td>人在环中自主 Agent：改文件（diff 审批）、终端执行、无头浏览器调试、检查点回滚；<strong>MCP 动态挂载工具</strong>；<strong>Ollama/LM Studio</strong>[22]</td>
+					<td>无独立插件商店，工具走 <strong>MCP server</strong> 生态接入</td>
+					<td>71,130 star [22]；Marketplace <strong>576 万安装 / 324 评分</strong> [23]；Cline Bot 融资 $32M [25]</td>
+					<td>整任务丢给 AI 自主执行、每步审批的重度 Agent 编程</td>
+			</tr>
+			<tr>
+					<td><strong>continue</strong></td>
+					<td>VS Code + JetBrains 扩展 · <strong>Apache-2.0</strong> [26]</td>
+					<td>v2.0.0-vscode（tag 滞后 4 个月）[29]</td>
+					<td>四合一：Agent / Chat / Edit / Autocomplete；<code>config.yaml</code> 配多 provider；<strong>Ollama 一等公民（AUTODETECT）</strong>[28]；CI 侧 AI checks</td>
+					<td>无插件注册表，生态靠声明式 config + MCP</td>
+					<td>36,386 star [26]；Marketplace <strong>421 万安装 / 183 评分</strong> [27]；跨 VS Code/JetBrains</td>
+					<td>自带模型（含本地）+ 补全/对话/Agent 都要的灵活自托管</td>
+			</tr>
+	</tbody>
+</table>
+<hr>
+<h2 id="四自托管-web-ui3-个">四、自托管 Web UI（3 个）</h2>
+<table>
+	<thead>
+			<tr>
+					<th>项目</th>
+					<th>形态·许可</th>
+					<th>当前版本</th>
+					<th>核心功能</th>
+					<th>插件生态</th>
+					<th>质量信号（star / 活跃度 / 背书）</th>
+					<th>适用场景</th>
+			</tr>
+	</thead>
+	<tbody>
+			<tr>
+					<td><strong>openwebui</strong></td>
+					<td>Web UI · Docker 一键部署 · Open WebUI License（BSD-3 + 品牌条款）[31]</td>
+					<td>v0.12.5（2026-10-29）[32]</td>
+					<td><strong>本地模型优先（Ollama）</strong>、RAG 知识库、联网搜索、多用户权限、代码解释、MCP [33]</td>
+					<td><strong>六类插件：Pipe/Tool/Action/Event/Filter/MCP</strong>；官方 Community 托管<strong>数百个</strong>工具一键导入；独立 Pipelines 框架 [33]</td>
+					<td><strong>157,421 star</strong> [30]；当日有 push；Docker 下载 4.32 亿+ [34]；背后有 Open WebUI Inc. 与企业版</td>
+					<td>本地 Ollama + RAG + 多用户 + 丰富 Python 插件，自托管首选</td>
+			</tr>
+			<tr>
+					<td><strong>librechat</strong></td>
+					<td>Web UI · Docker Compose · <strong>MIT</strong>（最宽松）[35]</td>
+					<td>v0.8.8（2026-10-01）+ v0.8.9-rc1 [36]</td>
+					<td>多家 API 聚合（OpenAI/Claude/Gemini/Azure/Groq/<strong>DeepSeek</strong> 等）、Agents + Skills、MCP、Actions、Code Interpreter、多用户 [36]</td>
+					<td>插件机制 = MCP server + Actions(OpenAPI) + Agent Skills；<strong>无独立市场网站</strong>，配置文件挂载 [37]</td>
+					<td>46,587 star [35]；当日有 push；<strong>2025-11 被 ClickHouse 收购、承诺保持 MIT</strong> [38]</td>
+					<td>多账号/多 API key 统一管理 + Agent 编排；本地 Ollama 支持弱</td>
+			</tr>
+			<tr>
+					<td><strong>lobehub</strong></td>
+					<td>Web UI · Docker/Vercel · LobeHub Community License（Apache-2.0 + 衍生商用需授权）[40]</td>
+					<td>v2.2.21（2026-10-29）[41]</td>
+					<td>20+ Provider（含 DeepSeek/Ollama）、Agent Builder、内置 RAG、多模态、MCP 接入、Agent Tasks [41]</td>
+					<td>生态数字最大但<strong>为官方营销口径</strong>：Skills 市场宣称 30 万+ [43]、MCP 市场宣称 11 万+ [42]、Agent 500+；站内一键安装或 lh CLI</td>
+					<td>83,651 star [39]；当日有 push；LobeHub LLC 商业公司；二次分发需商业授权 [40]</td>
+					<td>高颜值多模态助手 + Agent 市场，国内模型友好；商用改造前看许可</td>
+			</tr>
+	</tbody>
+</table>
+<hr>
+<h2 id="五桌面客户端与-ai-ide3-个">五、桌面客户端与 AI IDE（3 个）</h2>
+<table>
+	<thead>
+			<tr>
+					<th>项目</th>
+					<th>形态·许可</th>
+					<th>当前版本</th>
+					<th>核心功能</th>
+					<th>插件生态</th>
+					<th>质量信号（star / 商业化 / 背书）</th>
+					<th>适用场景</th>
+			</tr>
+	</thead>
+	<tbody>
+			<tr>
+					<td><strong>cherry studio</strong></td>
+					<td>跨平台桌面客户端（Win/macOS/Linux）· <strong>AGPL-3.0</strong> 开源 [44]</td>
+					<td>v2.1.10（2026-10-31）[46]</td>
+					<td>50+ 服务商 / 300+ 模型（含 DeepSeek/豆包等国产）、<strong>Ollama 可完全离线</strong>、知识库、300+ 预置助手、自主 Agent（推理/拆步/调工具）、模型并排对比 [45]</td>
+					<td>扩展 = <strong>MCP 服务器 + 小程序</strong>；无独立第三方市场，靠协议生态 [45]</td>
+					<td>53,140 star [44]；当日有 push；有企业版商业化；中文社区活跃（Telegram/Discord/QQ）[45]</td>
+					<td>国产模型 + 本地 Ollama + MCP 全装一个窗口的重度 AI 工作站</td>
+			</tr>
+			<tr>
+					<td><strong>chatbox</strong></td>
+					<td>桌面 + iOS/Android/Web <strong>六端</strong> · <strong>GPL-3.0</strong> 开源 [47]</td>
+					<td>v1.23.5（2026-09-24）[49]</td>
+					<td>多模型接入（自带 Key）、联网搜索、图表可视化、代码生成预览、知识库（桌面端）；极简「通用遥控器」定位 [48]</td>
+					<td>无传统插件市场；<strong>MCP 接入为 Pro 订阅功能</strong>；扩展靠自定义助手 prompt [48]</td>
+					<td>42,214 star [47]；托管订阅 Pro+ $33.33–39.99/月 [48]；2023 年老项目</td>
+					<td>桌面+手机+Web 全平台、自备 Key 即用的轻量客户端</td>
+			</tr>
+			<tr>
+					<td><strong>cursor</strong></td>
+					<td>AI IDE（VS Code fork，闭源商业）· <strong>无开源许可</strong> [50]</td>
+					<td>桌面端自动更新（无公开版本号）[50]</td>
+					<td>补全 / inline 编辑 / Chat / <strong>Composer 2.5 多文件 Agent</strong>、后台 Agent、MCPs/Skills/Hooks、Bugbot 代码审查 [52]</td>
+					<td><strong>直接继承 VS Code 扩展市场</strong>（fork 可平移扩展/快捷键/配置），生态最成熟 [53]；Teams 档有内部插件市场 [51]</td>
+					<td>公开仓库 33,303 star（仅 issue 用途）[50]；订阅 Free/$8/$30/$100/$200 每月 [51]；Grok 模型池 + Premium 起可按 API 价用第三方模型 [51]</td>
+					<td>写代码为主业、愿付订阅换 Agent 化重构 + 云端 Agent；预算敏感者慎选</td>
+			</tr>
+	</tbody>
+</table>
+<hr>
+<h2 id="六模型路由--多模型调度层deepseek-调用其他模型的冷门实用方案">六、模型路由 / 多模型调度层（「DeepSeek 调用其他模型」的冷门实用方案）</h2>
+<blockquote>
+<p>这一层不是客户端，而是把 DeepSeek 主模型与各家模型串起来的网关/路由/编排技术，正好覆盖你此前调研的「让 DeepSeek 调用其他模型」需求。此前结论（本机调研记录）：编程工具 subagent 只支持手动切模型（opencode）或仅限自家模型别名（claude code），dsh 无原生能力、需插件（自研 dsh-model-call 已验证 DeepSeek→智谱/魔塔链路）。</p>
+</blockquote>
+<table>
+	<thead>
+			<tr>
+					<th>项目</th>
+					<th>形态·许可</th>
+					<th>实现方式（如何让 DeepSeek 调其他模型）</th>
+					<th>安装/环境（云电脑·Termux）</th>
+					<th>质量信号</th>
+					<th>可用性判断</th>
+			</tr>
+	</thead>
+	<tbody>
+			<tr>
+					<td><strong>LiteLLM</strong></td>
+					<td>Python 库+代理网关 · MIT（enterprise 目录商业）[56]</td>
+					<td>统一 OpenAI 兼容端点，转发/降级 100+ provider；cost-aware 路由、fallback、负载均衡 [54]</td>
+					<td>pip 一键 / Docker；Termux 可</td>
+					<td>~62.3k star [54]；PyPI 1.78.3 [55]；BerriAI 公司维护、迭代极活跃</td>
+					<td>事实标准，最稳妥的「DeepSeek 后面挂一堆模型」网关</td>
+			</tr>
+			<tr>
+					<td><strong>new-api / one-api</strong></td>
+					<td>自托管中转网关 · new-api <strong>AGPLv3</strong> [57] / one-api <strong>MIT</strong> [59]</td>
+					<td>渠道权重路由 + 自动 fallback + token 计费，一个 key 聚合 DeepSeek/豆包/通义等多家 [58]</td>
+					<td>Docker 或 Go 静态二进制；Termux 可（二进制直跑，docker 不便）</td>
+					<td>new-api ~50.9k star、当日活跃 [57]；one-api ~37.0k、更新放缓 [59]；中文圈事实标准</td>
+					<td>要「自搭中转站+计费面板」选 new-api；只要最简 MIT 中转选 one-api</td>
+			</tr>
+			<tr>
+					<td><strong>OpenRouter</strong></td>
+					<td>托管 SaaS（闭源、非自托管）[60]</td>
+					<td>一个 key/端点聚合 500+ 模型；自动比价/延迟路由 + provider 级 fallback [60]</td>
+					<td>零部署，仅 HTTP 调用；Termux 只需联网</td>
+					<td>无 star（非开源）；700T+ tokens、500+ 模型 [60]；Standard 5.5% / Business 8% 手续费 [61]</td>
+					<td>不想自建网关的最快路径；数据过第三方、用量付费</td>
+			</tr>
+			<tr>
+					<td><strong>RouteLLM</strong></td>
+					<td>Python 本地路由库 · Apache-2.0 [62]</td>
+					<td>人类偏好数据训练的二分类器，按复杂度把请求分流到强/弱模型，官方称降本 85% 保 95% 质量 [63]</td>
+					<td>pip；Termux 可</td>
+					<td>~5.6k star [62]；<strong>2024-08 起基本停更</strong> [64]，新模型未纳入路由表</td>
+					<td>思路开创但仓库已休眠，只适合学习或自行 fork 维护</td>
+			</tr>
+			<tr>
+					<td><strong>deepseek-multi-agent-plugin</strong></td>
+					<td>Python 库（零运行时依赖）+CLI/HTTP/MCP · MIT [65]</td>
+					<td>6 策略组队（broadcast/sequential/debate/supervisor/consensus/relay），supervisor 即主管分解→worker 并行→汇总，天然「DeepSeek 调其他模型」[65]</td>
+					<td>pip 一键；Termux <strong>非常可</strong>（49.6KB wheel）[65]</td>
+					<td>v1.0.1（2026-08-17）[65]；单人维护、发布仅 2 个月、无社区</td>
+					<td>最对口且最轻的「DeepSeek 当主管」方案；按个人玩具项目预期管理</td>
+			</tr>
+			<tr>
+					<td><strong>chimera-deliberation</strong></td>
+					<td>Python 动态多模型网关（CLI+REST+WebUI+MCP）· MIT [66]</td>
+					<td>dispatcher 一次调用设计 DAG→worker 并行调多厂商→aggregator 合并；底层复用 LiteLLM [66]</td>
+					<td>pip[full]；Termux 需 Python 3.11+，偏重</td>
+					<td>v0.2.8 Alpha（2026-10-25）[66]；单人维护、9 版本快速迭代</td>
+					<td>自动化程度最高（一次请求自动组队），Alpha 阶段、配置多，适合折腾党</td>
+			</tr>
+			<tr>
+					<td><strong>external-agents</strong></td>
+					<td>Node.js MCP server · MIT [67]</td>
+					<td>主 agent（Claude Code/Codex/Cursor）经 MCP 把活 round-robin 派给 20–40 个免费/廉价模型桶（含 DeepSeek）；按 <code>x-ratelimit-*</code> 头做配额感知 fallback [68]</td>
+					<td>npm 一键；Termux 可（自带 Node）</td>
+					<td>v0.63.0、累计 106 个版本（迭代勤）[67]；<strong>0 dependents</strong>、个人/小团队工具 [67]</td>
+					<td>已在用 Claude Code/Codex 的省钱方案最对口；路由稳定性取决于各 free tier</td>
+			</tr>
+			<tr>
+					<td><strong>Dify</strong></td>
+					<td>LLMOps/Agentic 工作流平台 · Apache-2.0 修改版（禁多租户托管）[70]</td>
+					<td>可视化画布拖节点，每个 LLM 节点可单独选 DeepSeek/其他模型，条件分支实现子任务路由 [70]</td>
+					<td>docker compose 一键；Termux 不现实（多组件重）</td>
+					<td>~159.9k star [69]；langgenius 公司维护、迭代极活跃</td>
+					<td>产品级「可视化把 DeepSeek 与其他模型串成业务流」平台；资源占用大</td>
+			</tr>
+			<tr>
+					<td><strong>n8n</strong></td>
+					<td>通用工作流自动化平台 · Sustainable Use License（非 OSI）[71]</td>
+					<td>400+ 集成节点 + AI Agent/LLM 节点，串接不同模型与业务系统做路由/串联/人工审核 [72]</td>
+					<td>npx/npm 一键；Termux 可（重型建议云电脑）</td>
+					<td>~209.1k star [71]；$240M 融资、250k+ 社区 [71]</td>
+					<td>业务流水线编排最成熟；「按 prompt 复杂度智能选模型」非其强项</td>
+			</tr>
+	</tbody>
+</table>
+<p><strong>dsh 生态内同类插件</strong>（此前调研记录、均未实测）：<code>dsh-set-model</code>（agent 经自身工具切换模型预设）、<code>dsh-model-router</code>（API 路由）、<code>dsh-agent-conductor</code>（调度 11 个外部 agent CLI）、<code>dsh-council</code>（多模型议会）、<code>dsh-our-free-model</code>（免费 provider）——来源：dsh-plugin-catalog npm 目录包 [2] + 本机此前调研记录。与自研 dsh-model-call 同类思路，是 dsh 内的补充选择。</p>
+<hr>
+<h2 id="七选择建议按你的场景全栈开发--多模型调试--linux-云电脑沙箱--termux--windows">七、选择建议（按你的场景：全栈开发 + 多模型调试 + Linux 云电脑/沙箱 + Termux + Windows）</h2>
+<ol>
+<li><strong>Termux / 云电脑 SSH 无头环境（CLI 主力）</strong>：继续用 dsh 盯 DeepSeek 官方生态；并行装 <strong>opencode</strong>（MIT、Node 生态、多模型）或 <strong>aider</strong>（Python、本地模型、自动 Git 提交）做多模型调试最顺手。claude code / codex 功能强但模型绑定重，适合你把 Claude/OpenAI 账号用起来时再上。</li>
+<li><strong>云电脑的 VS Code（code-server）</strong>：装 <strong>cline</strong>（自主 Agent + MCP，576 万安装量）或 <strong>continue</strong>（四合一 + Ollama 本地模型一等公民）。对全栈 + 多模型场景，continue 的 config.yaml 多 provider 更贴合「调试多家模型」的需求。</li>
+<li><strong>自托管 Web UI（跑在云电脑/沙箱里长期开）</strong>：首选 <strong>openwebui</strong>——本地模型优先、六类插件机制、RAG 和多用户；多 API key 聚合选 <strong>librechat</strong>（MIT 最宽松、被 ClickHouse 收购后仍在维护）。</li>
+<li><strong>桌面端（Windows / 云电脑 GUI）</strong>：<strong>cherry studio</strong> 是开源里国产模型聚合最全的（含 DeepSeek、支持离线 Ollama + MCP）；<strong>chatbox</strong> 胜在六端轻量。</li>
+<li><strong>不建议优先</strong>：<strong>cursor</strong>（闭源订阅，$8/月起，自带模型池限制多——Free/Plus 档不能接第三方模型/自带 Key [51]，与你要「多模型调试」的目标相悖）；lobehub 的生态数字虽大但属营销口径、许可对衍生商用有限制。</li>
+<li><strong>「DeepSeek 调用其他模型」方案层</strong>：自建网关选 <strong>LiteLLM</strong>（通用、Termux 可 pip）或 <strong>new-api</strong>（国内模型+计费、Go 静态二进制 Termux 可跑）；不想自建直接 <strong>OpenRouter</strong> 一个 key 聚合 500+ 模型。要「DeepSeek 当主管组队调其他模型」最对口的是 <strong>deepseek-multi-agent-plugin</strong>（纯 Python 零依赖，Termux 极轻，可先 <code>--demo</code> 跑通再配真实 key）[65]；已在用 Claude Code/Codex 想省钱选 <strong>external-agents</strong>（MCP 配额池）[67]。<strong>RouteLLM 已停更，跳过</strong> [64]；Dify/n8n 属于重型平台，仅当需要可视化业务工作流时再上。</li>
+</ol>
+<hr>
+<h2 id="来源索引">来源索引</h2>
+<ol>
+<li><a href="https://www.npmjs.com/package/@deepseek-ai/dsh">https://www.npmjs.com/package/@deepseek-ai/dsh</a></li>
+<li><a href="https://www.npmjs.com/package/dsh-plugin-catalog">https://www.npmjs.com/package/dsh-plugin-catalog</a></li>
+<li><a href="https://dshmk.com">https://dshmk.com</a></li>
+<li><a href="https://api.github.com/repos/sst/opencode">https://api.github.com/repos/sst/opencode</a></li>
+<li><a href="https://api.github.com/repos/sst/opencode/releases/latest">https://api.github.com/repos/sst/opencode/releases/latest</a></li>
+<li><a href="https://opencode.ai/docs/ecosystem/">https://opencode.ai/docs/ecosystem/</a></li>
+<li><a href="https://opencode.ai/v2/docs/agents/">https://opencode.ai/v2/docs/agents/</a></li>
+<li><a href="https://api.github.com/repos/Aider-AI/aider">https://api.github.com/repos/Aider-AI/aider</a></li>
+<li><a href="https://pypi.org/project/aider-chat/">https://pypi.org/project/aider-chat/</a></li>
+<li><a href="https://aider.chat/">https://aider.chat/</a></li>
+<li><a href="https://api.github.com/repos/anthropics/claude-code">https://api.github.com/repos/anthropics/claude-code</a></li>
+<li><a href="https://www.npmjs.com/package/@anthropic-ai/claude-code">https://www.npmjs.com/package/@anthropic-ai/claude-code</a></li>
+<li><a href="https://code.claude.com/docs/en/plugins/">https://code.claude.com/docs/en/plugins/</a></li>
+<li><a href="https://code.claude.com/docs/en/github-actions">https://code.claude.com/docs/en/github-actions</a></li>
+<li><a href="https://api.github.com/repos/openai/codex">https://api.github.com/repos/openai/codex</a></li>
+<li><a href="https://api.github.com/repos/openai/codex/releases/latest">https://api.github.com/repos/openai/codex/releases/latest</a></li>
+<li><a href="https://openai.com/index/unrolling-the-codex-agent-loop/">https://openai.com/index/unrolling-the-codex-agent-loop/</a></li>
+<li><a href="https://api.github.com/repos/microsoft/vscode">https://api.github.com/repos/microsoft/vscode</a></li>
+<li><a href="https://api.github.com/repos/microsoft/vscode/releases/latest">https://api.github.com/repos/microsoft/vscode/releases/latest</a></li>
+<li><a href="https://marketplace.visualstudio.com/_apis/public/gallery/extensionquery">https://marketplace.visualstudio.com/_apis/public/gallery/extensionquery</a></li>
+<li><a href="https://code.visualstudio.com/License">https://code.visualstudio.com/License</a></li>
+<li><a href="https://api.github.com/repos/cline/cline">https://api.github.com/repos/cline/cline</a></li>
+<li><a href="https://marketplace.visualstudio.com/items?itemName=saoudrizwan.claude-dev">https://marketplace.visualstudio.com/items?itemName=saoudrizwan.claude-dev</a></li>
+<li><a href="https://api.github.com/repos/cline/cline/releases/latest">https://api.github.com/repos/cline/cline/releases/latest</a></li>
+<li><a href="https://cline.bot/blog/cline-raises-32m-series-a-and-seed-funding-building-the-open-source-ai-coding-agent-that-enterprises-trust">https://cline.bot/blog/cline-raises-32m-series-a-and-seed-funding-building-the-open-source-ai-coding-agent-that-enterprises-trust</a></li>
+<li><a href="https://api.github.com/repos/continuedev/continue">https://api.github.com/repos/continuedev/continue</a></li>
+<li><a href="https://marketplace.visualstudio.com/items?itemName=Continue.continue">https://marketplace.visualstudio.com/items?itemName=Continue.continue</a></li>
+<li><a href="https://docs.continue.dev/guides/ollama-guide">https://docs.continue.dev/guides/ollama-guide</a></li>
+<li><a href="https://api.github.com/repos/continuedev/continue/releases/latest">https://api.github.com/repos/continuedev/continue/releases/latest</a></li>
+<li><a href="https://api.github.com/repos/open-webui/open-webui">https://api.github.com/repos/open-webui/open-webui</a></li>
+<li><a href="https://raw.githubusercontent.com/open-webui/open-webui/main/LICENSE">https://raw.githubusercontent.com/open-webui/open-webui/main/LICENSE</a></li>
+<li><a href="https://github.com/open-webui/open-webui/releases">https://github.com/open-webui/open-webui/releases</a></li>
+<li><a href="https://docs.openwebui.com/features/extensibility/community/">https://docs.openwebui.com/features/extensibility/community/</a></li>
+<li><a href="https://openwebui.com/llms.txt">https://openwebui.com/llms.txt</a></li>
+<li><a href="https://api.github.com/repos/LibreChat-AI/LibreChat">https://api.github.com/repos/LibreChat-AI/LibreChat</a></li>
+<li><a href="https://www.librechat.ai/changelog/v0.8.8">https://www.librechat.ai/changelog/v0.8.8</a></li>
+<li><a href="https://www.librechat.ai/docs/features/mcp">https://www.librechat.ai/docs/features/mcp</a></li>
+<li><a href="https://www.librechat.ai/blog/2026-02-18_2026_roadmap">https://www.librechat.ai/blog/2026-02-18_2026_roadmap</a></li>
+<li><a href="https://api.github.com/repos/lobehub/lobehub">https://api.github.com/repos/lobehub/lobehub</a></li>
+<li><a href="https://raw.githubusercontent.com/lobehub/lobehub/main/LICENSE">https://raw.githubusercontent.com/lobehub/lobehub/main/LICENSE</a></li>
+<li><a href="https://api.github.com/repos/lobehub/lobehub/releases">https://api.github.com/repos/lobehub/lobehub/releases</a></li>
+<li><a href="https://lobehub.com/mcp">https://lobehub.com/mcp</a></li>
+<li><a href="https://lobehub.com/pt-BR/skills?q=mcp">https://lobehub.com/pt-BR/skills?q=mcp</a></li>
+<li><a href="https://github.com/CherryHQ/cherry-studio">https://github.com/CherryHQ/cherry-studio</a></li>
+<li><a href="https://cherry-ai.com">https://cherry-ai.com</a></li>
+<li><a href="https://api.github.com/repos/CherryHQ/cherry-studio/releases/latest">https://api.github.com/repos/CherryHQ/cherry-studio/releases/latest</a></li>
+<li><a href="https://github.com/chatboxai/chatbox">https://github.com/chatboxai/chatbox</a></li>
+<li><a href="https://chatboxai.app">https://chatboxai.app</a></li>
+<li><a href="https://api.github.com/repos/chatboxai/chatbox/releases/latest">https://api.github.com/repos/chatboxai/chatbox/releases/latest</a></li>
+<li><a href="https://github.com/cursor/cursor">https://github.com/cursor/cursor</a></li>
+<li><a href="https://cursor.com/docs/models-and-pricing">https://cursor.com/docs/models-and-pricing</a></li>
+<li><a href="https://cursor.com/changelog/2-4">https://cursor.com/changelog/2-4</a></li>
+<li><a href="https://daily.dev/blog/best-ai-coding-assistants-comparison/">https://daily.dev/blog/best-ai-coding-assistants-comparison/</a></li>
+<li><a href="https://docs.litellm.ai/docs/agent_resources">https://docs.litellm.ai/docs/agent_resources</a></li>
+<li><a href="https://pypi.org/project/litellm/1.78.3/">https://pypi.org/project/litellm/1.78.3/</a></li>
+<li><a href="https://www.litellm.ai/about">https://www.litellm.ai/about</a></li>
+<li><a href="https://ossean.com/QuantumNous/new-api">https://ossean.com/QuantumNous/new-api</a></li>
+<li><a href="https://docs.newapi.ai/en/docs/guide/wiki/basic-concepts/project-introduction">https://docs.newapi.ai/en/docs/guide/wiki/basic-concepts/project-introduction</a></li>
+<li><a href="https://ross.abutalabs.com/products/one-api">https://ross.abutalabs.com/products/one-api</a></li>
+<li><a href="https://openrouter.ai/">https://openrouter.ai/</a></li>
+<li><a href="https://openrouter.ai/pricing">https://openrouter.ai/pricing</a></li>
+<li><a href="https://www.lmsys.org/">https://www.lmsys.org/</a></li>
+<li><a href="https://pypi.org/project/routellm/0.1.0/">https://pypi.org/project/routellm/0.1.0/</a></li>
+<li><a href="https://clawrouters.com/blog/best-open-source-llm-router">https://clawrouters.com/blog/best-open-source-llm-router</a></li>
+<li><a href="https://pypi.org/project/deepseek-multi-agent-plugin/">https://pypi.org/project/deepseek-multi-agent-plugin/</a></li>
+<li><a href="https://pypi.org/project/chimera-deliberation/">https://pypi.org/project/chimera-deliberation/</a></li>
+<li><a href="https://www.npmjs.com/package/@mrrlin-dev/external-agents">https://www.npmjs.com/package/@mrrlin-dev/external-agents</a></li>
+<li><a href="https://dev.to/elispeak111/how-i-turned-fragmented-llm-quotas-into-one-larger-token-budget-with-an-mcp-server-2ek1">https://dev.to/elispeak111/how-i-turned-fragmented-llm-quotas-into-one-larger-token-budget-with-an-mcp-server-2ek1</a></li>
+<li><a href="https://ghtrends.dev/langgenius/dify/">https://ghtrends.dev/langgenius/dify/</a></li>
+<li><a href="http://raw.githubusercontent.com/langgenius/dify/main/LICENSE">http://raw.githubusercontent.com/langgenius/dify/main/LICENSE</a></li>
+<li><a href="https://n8n.io/press/">https://n8n.io/press/</a></li>
+<li><a href="https://n8n.io/">https://n8n.io/</a></li>
+</ol>
+<blockquote>
+<p>数据抓取时间 2026-11-01，主要来源为 GitHub REST API（star/版本/许可）、官方文档与官网、VS Code Marketplace Gallery API、npm/PyPI。star 数随时间增长，表中为抓取时点值。</p>
+</blockquote>
+
+  </div>
+
+  <nav class="post-nav">
+    
+      <a class="prev" href="/posts/%E6%A8%A1%E5%9E%8B%E8%B7%AF%E7%94%B1%E5%A4%9A%E6%A8%A1%E5%9E%8B%E8%B0%83%E5%BA%A6%E8%B0%83%E7%A0%94%E6%8A%A5%E5%91%8A/">← 模型路由 / 多模型调度 / DeepSeek 调用其他模型 —— 9 对象可用性调研</a>
+    
+    
+      <a class="next" href="/posts/%E5%A4%9A%E6%A8%A1%E5%9E%8B%E8%B0%83%E7%94%A8%E6%96%B9%E6%A1%88%E5%AE%9E%E6%B5%8B%E6%8A%A5%E5%91%8A/">多方案实测:DeepSeek 自主调用其他模型(2026-10-31) →</a>
+    
+  </nav>
+</article>
+
+  </main><footer>
+  <span>© 2026 zjx 的手记 · 由 Hugo 生成</span>
+  <span>
+    <a href="zhoujiaxuan0729" target="_blank" rel="noopener">GitHub</a>
+    <a href="mailto:zhoujiaxuan45@outlook.com">邮件</a>
+  </span>
+</footer>
+</div><script>
+  
+  (function () {
+    var btn = document.getElementById('themeToggle');
+    if (!btn) return;
+    btn.addEventListener('click', function () {
+      var isDark = document.documentElement.classList.toggle('dark');
+      try { localStorage.setItem('theme', isDark ? 'dark' : 'light'); } catch (e) {}
+    });
+  })();
+</script>
+</body>
+</html>

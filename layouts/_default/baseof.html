@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+{{- partial "head.html" . -}}
+<body>
+<div class="wrap">
+  {{- partial "header.html" . -}}
+  <main>
+    {{- block "main" . }}{{ end }}
+  </main>
+  {{- partial "footer.html" . -}}
+</div>
+{{- if .Site.Params.toast -}}
+<div id="toast"></div>
+<script>
+  (function () {
+    var toast = document.getElementById('toast');
+    var timer = null;
+    document.addEventListener('click', function (e) {
+      var t = e.target.closest('[data-toast]');
+      if (!t) return;
+      toast.textContent = t.getAttribute('data-toast');
+      toast.classList.add('show');
+      if (timer) clearTimeout(timer);
+      timer = setTimeout(function () { toast.classList.remove('show'); }, 1600);
+    });
+  })();
+</script>
+{{- end -}}
+<script>
+  // 夜间模式切换
+  (function () {
+    var btn = document.getElementById('themeToggle');
+    if (!btn) return;
+    btn.addEventListener('click', function () {
+      var isDark = document.documentElement.classList.toggle('dark');
+      try { localStorage.setItem('theme', isDark ? 'dark' : 'light'); } catch (e) {}
+    });
+  })();
+</script>
+</body>
+</html>

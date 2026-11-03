@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+	<channel>
+		<title>网络 on 可能是一个凑数的blog?(但显然不是)</title>
+		<link>http://192.168.3.3:4096/tags/%E7%BD%91%E7%BB%9C/</link>
+		<description>Recent content in 网络 on 可能是一个凑数的blog?(但显然不是)</description>
+		<generator>Hugo</generator>
+		<language>zh-cn</language>
+		
+		
+		
+		
+			<lastBuildDate>Sun, 25 Oct 2026 00:00:00 +0000</lastBuildDate>
+		
+			<atom:link href="http://192.168.3.3:4096/tags/%E7%BD%91%E7%BB%9C/index.xml" rel="self" type="application/rss+xml" />
+			<item>
+				<title>OpenWrt 软路由初体验：超五类线够不够用</title>
+				<link>http://192.168.3.3:4096/posts/openwrt-first-look/</link>
+				<pubDate>Sun, 25 Oct 2026 00:00:00 +0000</pubDate>
+				<guid>http://192.168.3.3:4096/posts/openwrt-first-look/</guid>
+				<description>&lt;h2 id=&#34;固件选择&#34;&gt;固件选择&lt;/h2&gt;&#xA;&lt;p&gt;新手推荐 ImmortalWrt（OpenWrt 中文分支），驱动和中文包更全。&lt;/p&gt;&#xA;&lt;h2 id=&#34;关键配置&#34;&gt;关键配置&lt;/h2&gt;&#xA;&lt;ul&gt;&#xA;&lt;li&gt;&lt;strong&gt;WAN 口&lt;/strong&gt;：接光猫桥模式&lt;/li&gt;&#xA;&lt;li&gt;&lt;strong&gt;LAN 口&lt;/strong&gt;：接交换机和 AP&lt;/li&gt;&#xA;&lt;li&gt;&lt;strong&gt;DDNS&lt;/strong&gt;：配合 Cloudflare API 自动更新域名解析&lt;/li&gt;&#xA;&lt;li&gt;&lt;strong&gt;IPv6&lt;/strong&gt;：光猫桥接后直接能拿到前缀&lt;/li&gt;&#xA;&lt;/ul&gt;&#xA;&lt;h2 id=&#34;网线&#34;&gt;网线&lt;/h2&gt;&#xA;&lt;p&gt;超五类（Cat5e）短距离跑千兆完全够，没必要上六类。&lt;/p&gt;&#xA;&lt;h2 id=&#34;下一步&#34;&gt;下一步&lt;/h2&gt;&#xA;&lt;p&gt;准备挂个 U 盘做文件分享，再装个 SQM 智能队列改善延迟。&lt;/p&gt;</description>
+			</item>
+			<item>
+				<title>蒲公英组网：把手机变成家里的内网节点</title>
+				<link>http://192.168.3.3:4096/posts/pgyer-tunnel/</link>
+				<pubDate>Thu, 22 Oct 2026 00:00:00 +0000</pubDate>
+				<guid>http://192.168.3.3:4096/posts/pgyer-tunnel/</guid>
+				<description>&lt;h2 id=&#34;为什么用蒲公英&#34;&gt;为什么用蒲公英&lt;/h2&gt;&#xA;&lt;p&gt;家里宽带给的是大内网 IP，没法从外面直接访问。frp 需要一台有公网的 VPS，暂时不想多花钱。&lt;/p&gt;&#xA;&lt;h2 id=&#34;配置&#34;&gt;配置&lt;/h2&gt;&#xA;&lt;ol&gt;&#xA;&lt;li&gt;手机装蒲公英 Android 客户端，登录账号。&lt;/li&gt;&#xA;&lt;li&gt;家里软路由也装一个蒲公英客户端，同账号。&lt;/li&gt;&#xA;&lt;li&gt;两台设备自动分到同一个虚拟网段。&lt;/li&gt;&#xA;&lt;li&gt;手机上 &lt;code&gt;hugo server --bind 0.0.0.0&lt;/code&gt;，外面通过 &lt;code&gt;http://手机虚拟IP:1313&lt;/code&gt; 访问。&lt;/li&gt;&#xA;&lt;/ol&gt;&#xA;&lt;h2 id=&#34;局限&#34;&gt;局限&lt;/h2&gt;&#xA;&lt;ul&gt;&#xA;&lt;li&gt;只有装了蒲公英的设备能访问，不能公开分享。&lt;/li&gt;&#xA;&lt;li&gt;延迟比公网直连高一些，但自用够了。&lt;/li&gt;&#xA;&lt;/ul&gt;</description>
+			</item>
+	</channel>
+</rss>

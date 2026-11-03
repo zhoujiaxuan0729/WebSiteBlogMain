@@ -1,0 +1,40 @@
+baseURL = "https://example.com/"
+languageCode = "zh-cn"
+title = "可能是一个凑数的blog?(但显然不是)"
+enableRobotsTXT = true
+pagination.pagerSize = 20
+
+[params]
+  tagline = "sha包原话:一台手机，几行代码，一些在 Termux 和 AidLux 里折腾出来的零碎记录。关于编程、网络，和一切让我着迷的小实验。\n你说这装不装，但我又不知道该写点啥在这。"
+  author = "zjx"
+  email = "zhoujiaxuan45@outlook.com"
+  github = "zhoujiaxuan0729"
+
+[[menus.main]]
+  name = "归档"
+  url = "/posts/"
+  weight = 1
+[[menus.main]]
+  name = "关于"
+  url = "/about/"
+  weight = 2
+[[menus.main]]
+  name = "RSS"
+  url = "/index.xml"
+  weight = 3
+
+[markup]
+  [markup.highlight]
+    style = "gruvbox-light"
+    codeFences = true
+    guessSyntax = false
+    lineNos = false
+    tabWidth = 4
+
+[[module.mounts]]
+  source = "content"
+  target = "content"
+
+[[module.mounts]]
+  source = "/data/data/com.termux/files/home/storage/shared/Documents/blog"
+  target = "content/posts"

@@ -1,0 +1,7 @@
+<footer>
+  <span>© {{ now.Year }} {{ .Site.Params.author }} 的手记 · 由 Hugo 生成</span>
+  <span>
+    {{ with .Site.Params.github }}<a href="https://github.com/{{ . }}" target="_blank" rel="noopener">GitHub</a>{{ end }}
+    {{ with .Site.Params.email }}<a href="mailto:{{ . }}">邮件</a>{{ end }}
+  </span>
+</footer>

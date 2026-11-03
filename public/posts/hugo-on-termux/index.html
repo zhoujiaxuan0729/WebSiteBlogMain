@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="zh-CN"><head><script src="/livereload.js?mindelay=10&amp;v=2&amp;port=4096&amp;path=livereload" data-no-instant defer></script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>在 Termux 上用 Hugo 搭一个属于自己的轻量博客 · 可能是一个凑数的blog?(但显然不是)</title>
+  <meta name="description" content="不租服务器，不装数据库，单二进制的 Hugo 编译一篇文章只要几毫秒。从 pkg install 到第一次 hugo server 预览，中间踩了三个小坑。">
+  <script>
+    
+    (function () {
+      try {
+        var saved = localStorage.getItem('theme');
+        if (saved === 'dark' || (!saved && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+          document.documentElement.classList.add('dark');
+        }
+      } catch (e) {}
+    })();
+  </script>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='18' fill='%23B45309'/%3E%3Ctext x='50' y='68' font-size='52' text-anchor='middle' fill='%23FFFBEF' font-family='serif' font-weight='bold'%3Ez%3C/text%3E%3C/svg%3E">
+  <link rel="stylesheet" href="/css/main.css">
+  </head>
+<body>
+<div class="wrap"><header class="site">
+  <div class="brand">
+    <a href="/">可能是一个凑数的blog?(但显然不是)<span class="dot">.</span></a>
+  </div>
+  <p class="tagline">sha包原话:一台手机，几行代码，一些在 Termux 和 AidLux 里折腾出来的零碎记录。关于编程、网络，和一切让我着迷的小实验。
+你说这装不装，但我又不知道该写点啥在这。</p>
+  <nav class="top">
+    <a href="/">首页</a>
+    
+      <a href="/posts/">归档</a>
+    
+      <a href="/about/">关于</a>
+    
+      <a href="/index.xml">RSS</a>
+    
+    <button class="theme-toggle" id="themeToggle" aria-label="切换夜间模式" title="切换夜间模式">
+      <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+      </svg>
+      <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="12" r="5"/>
+        <line x1="12" y1="1" x2="12" y2="3"/>
+        <line x1="12" y1="21" x2="12" y2="23"/>
+        <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/>
+        <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
+        <line x1="1" y1="12" x2="3" y2="12"/>
+        <line x1="21" y1="12" x2="23" y2="12"/>
+        <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/>
+        <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
+      </svg>
+    </button>
+  </nav>
+</header>
+<main>
+<article class="post">
+  <header class="post-header">
+    <h1>在 Termux 上用 Hugo 搭一个属于自己的轻量博客</h1>
+    <div class="meta">
+      <span>2026-11-02</span>
+      <span>约 1 分钟读完</span>
+      
+        <span>
+          <a class="tag-inline" href="/tags/termux/">Termux</a><a class="tag-inline" href="/tags/hugo/">Hugo</a>
+        </span>
+      
+    </div>
+  </header>
+
+  <div class="post-body">
+    <h2 id="为什么选-hugo">为什么选 Hugo</h2>
+<p>手机上资源有限，WordPress 那套 Nginx + MySQL + PHP 常驻起来内存就吃满了。Hugo 是 Go 写的单二进制，编译一次整个站只要几百毫秒，写完 Markdown 立刻能预览。</p>
+<h2 id="第一步装-hugo">第一步：装 Hugo</h2>
+<div class="highlight"><pre tabindex="0" style="color:#3c3836;background-color:#fbf1c7;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>pkg install git golang -y
+</span></span><span style="display:flex;"><span><span style="color:#928374;font-style:italic"># 下载 ARM64 扩展版</span>
+</span></span><span style="display:flex;"><span>wget https://github.com/gohugoio/hugo/releases/download/v0.140.0/hugo_extended_0.140.0_linux-arm64.tar.gz
+</span></span><span style="display:flex;"><span>tar xzf hugo_extended_0.140.0_linux-arm64.tar.gz
+</span></span><span style="display:flex;"><span>chmod +x hugo
+</span></span><span style="display:flex;"><span>mv hugo $PREFIX/bin/
+</span></span></code></pre></div><h2 id="第二步新建站点">第二步：新建站点</h2>
+<div class="highlight"><pre tabindex="0" style="color:#3c3836;background-color:#fbf1c7;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>hugo new site myblog
+</span></span><span style="display:flex;"><span><span style="color:#b57614">cd</span> myblog
+</span></span><span style="display:flex;"><span>git init
+</span></span></code></pre></div><h2 id="第三步写文章">第三步：写文章</h2>
+<div class="highlight"><pre tabindex="0" style="color:#3c3836;background-color:#fbf1c7;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>hugo new posts/my-first-post.md
+</span></span></code></pre></div><p>编辑 <code>content/posts/my-first-post.md</code>，把顶部 <code>draft: true</code> 改成 <code>false</code>。</p>
+<h2 id="第四步本地预览">第四步：本地预览</h2>
+<div class="highlight"><pre tabindex="0" style="color:#3c3836;background-color:#fbf1c7;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>hugo server -D --bind 0.0.0.0
+</span></span></code></pre></div><p><code>--bind 0.0.0.0</code> 很关键，不然同局域网其他设备访问不到。</p>
+<h2 id="发布">发布</h2>
+<div class="highlight"><pre tabindex="0" style="color:#3c3836;background-color:#fbf1c7;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>hugo
+</span></span></code></pre></div><p>编译产物在 <code>public/</code> 目录，直接拖到 Cloudflare Pages 或 GitHub Pages 就行。</p>
+
+  </div>
+
+  <nav class="post-nav">
+    
+    
+      <a class="next" href="/posts/deepseek-on-kirin980/">麒麟 980 手机本地跑 DeepSeek 实测 →</a>
+    
+  </nav>
+</article>
+
+  </main><footer>
+  <span>© 2026 zjx 的手记 · 由 Hugo 生成</span>
+  <span>
+    <a href="zhoujiaxuan0729" target="_blank" rel="noopener">GitHub</a>
+    <a href="mailto:zhoujiaxuan45@outlook.com">邮件</a>
+  </span>
+</footer>
+</div><script>
+  
+  (function () {
+    var btn = document.getElementById('themeToggle');
+    if (!btn) return;
+    btn.addEventListener('click', function () {
+      var isDark = document.documentElement.classList.toggle('dark');
+      try { localStorage.setItem('theme', isDark ? 'dark' : 'light'); } catch (e) {}
+    });
+  })();
+</script>
+</body>
+</html>

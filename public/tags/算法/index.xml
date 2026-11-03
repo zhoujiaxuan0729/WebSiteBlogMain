@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+	<channel>
+		<title>算法 on 可能是一个凑数的blog?(但显然不是)</title>
+		<link>http://192.168.3.3:4096/tags/%E7%AE%97%E6%B3%95/</link>
+		<description>Recent content in 算法 on 可能是一个凑数的blog?(但显然不是)</description>
+		<generator>Hugo</generator>
+		<language>zh-cn</language>
+		
+		
+		
+		
+			<lastBuildDate>Wed, 28 Oct 2026 00:00:00 +0000</lastBuildDate>
+		
+			<atom:link href="http://192.168.3.3:4096/tags/%E7%AE%97%E6%B3%95/index.xml" rel="self" type="application/rss+xml" />
+			<item>
+				<title>WUSTOJ 刷题笔记：递归栈溢出到底怎么修</title>
+				<link>http://192.168.3.3:4096/posts/stack-overflow-debug/</link>
+				<pubDate>Wed, 28 Oct 2026 00:00:00 +0000</pubDate>
+				<guid>http://192.168.3.3:4096/posts/stack-overflow-debug/</guid>
+				<description>&lt;h2 id=&#34;现象&#34;&gt;现象&lt;/h2&gt;&#xA;&lt;p&gt;一道深度优先搜索题，小数据能过，大数据直接 segfault。&lt;/p&gt;&#xA;&lt;h2 id=&#34;排查&#34;&gt;排查&lt;/h2&gt;&#xA;&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;color:#3c3836;background-color:#fbf1c7;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;&#34;&gt;&lt;code class=&#34;language-c&#34; data-lang=&#34;c&#34;&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;ulimit &lt;span style=&#34;color:#af3a03&#34;&gt;-&lt;/span&gt;s  &lt;span style=&#34;color:#928374;font-style:italic&#34;&gt;// 查看栈大小，通常 8MB&#xA;&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;递归深度到 10 万层就炸了。每层栈帧大概几十到上百字节，8MB 根本不够。&lt;/p&gt;&#xA;&lt;h2 id=&#34;解法&#34;&gt;解法&lt;/h2&gt;&#xA;&lt;ol&gt;&#xA;&lt;li&gt;&lt;strong&gt;改写成迭代&lt;/strong&gt;：自己用数组模拟栈，最稳妥。&lt;/li&gt;&#xA;&lt;li&gt;&lt;strong&gt;增大栈&lt;/strong&gt;：链接时加 &lt;code&gt;-Wl,-z,stack-size=268435456&lt;/code&gt;，但可移植性差。&lt;/li&gt;&#xA;&lt;li&gt;&lt;strong&gt;尾递归优化&lt;/strong&gt;：看编译器脸色，不靠谱。&lt;/li&gt;&#xA;&lt;/ol&gt;&#xA;&lt;p&gt;最终选迭代，一劳永逸。&lt;/p&gt;</description>
+			</item>
+	</channel>
+</rss>

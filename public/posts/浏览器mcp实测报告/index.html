@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+<html lang="zh-CN"><head><script src="/livereload.js?mindelay=10&amp;v=2&amp;port=4096&amp;path=livereload" data-no-instant defer></script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>浏览器 MCP Server 实测报告 · 可能是一个凑数的blog?(但显然不是)</title>
+  <meta name="description" content="给 dsh 的建议:首选 @playwright/mcp启动最快、导航 1.5s、25 工具、内存 126MB,其次 chrome-devtools-mcp32 工具最全、两步导航 0.9s。两者均通">
+  <script>
+    
+    (function () {
+      try {
+        var saved = localStorage.getItem('theme');
+        if (saved === 'dark' || (!saved && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+          document.documentElement.classList.add('dark');
+        }
+      } catch (e) {}
+    })();
+  </script>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='18' fill='%23B45309'/%3E%3Ctext x='50' y='68' font-size='52' text-anchor='middle' fill='%23FFFBEF' font-family='serif' font-weight='bold'%3Ez%3C/text%3E%3C/svg%3E">
+  <link rel="stylesheet" href="/css/main.css">
+  </head>
+<body>
+<div class="wrap"><header class="site">
+  <div class="brand">
+    <a href="/">可能是一个凑数的blog?(但显然不是)<span class="dot">.</span></a>
+  </div>
+  <p class="tagline">sha包原话:一台手机，几行代码，一些在 Termux 和 AidLux 里折腾出来的零碎记录。关于编程、网络，和一切让我着迷的小实验。
+你说这装不装，但我又不知道该写点啥在这。</p>
+  <nav class="top">
+    <a href="/">首页</a>
+    
+      <a href="/posts/">归档</a>
+    
+      <a href="/about/">关于</a>
+    
+      <a href="/index.xml">RSS</a>
+    
+    <button class="theme-toggle" id="themeToggle" aria-label="切换夜间模式" title="切换夜间模式">
+      <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+      </svg>
+      <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="12" r="5"/>
+        <line x1="12" y1="1" x2="12" y2="3"/>
+        <line x1="12" y1="21" x2="12" y2="23"/>
+        <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/>
+        <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
+        <line x1="1" y1="12" x2="3" y2="12"/>
+        <line x1="21" y1="12" x2="23" y2="12"/>
+        <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/>
+        <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
+      </svg>
+    </button>
+  </nav>
+</header>
+<main>
+<article class="post">
+  <header class="post-header">
+    <h1>浏览器 MCP Server 实测报告</h1>
+    <div class="meta">
+      <span>2026-11-02</span>
+      <span>约 3 分钟读完</span>
+      
+        <span>
+          <a class="tag-inline" href="/tags/%E5%AF%B9%E8%AF%9D%E6%8A%A5%E5%91%8A/">对话报告</a>
+        </span>
+      
+    </div>
+  </header>
+
+  <div class="post-body">
+    <h1 id="浏览器-mcp-server-实测报告">浏览器 MCP Server 实测报告</h1>
+<blockquote>
+<p>主线背景:dsh 是否可访问并登录网页(服务器面板/监控)的落地扩展——先测外部浏览器 MCP,之后挂进 dsh(dsh-mcp-client 通道已确认,profile 当前零 MCP 配置)。
+实测日期:2026-11-02 | 环境:云主机 Linux,Node v22.23.2,npm 10.9.8,registry=npmmirror</p>
+</blockquote>
+<hr>
+<h2 id="1-结论速览">1. 结论速览</h2>
+<table>
+	<thead>
+			<tr>
+					<th>结论</th>
+					<th>内容</th>
+			</tr>
+	</thead>
+	<tbody>
+			<tr>
+					<td>✅ 可用且推荐</td>
+					<td><strong>@playwright/mcp</strong>(微软官方)、<strong>chrome-devtools-mcp</strong>(Google 官方)、<strong>puppeteer-mcp-server</strong>(官方示例)三者均实测成功访问本机网页</td>
+			</tr>
+			<tr>
+					<td>⚠️ 有条件可用</td>
+					<td><strong>@executeautomation/playwright-mcp-server</strong>:握手正常(33 工具)但锁死旧 chromium-1200 build,需专门补齐浏览器;且 npm 重装因网络波动失败,稳定性差</td>
+			</tr>
+			<tr>
+					<td>❌ 不推荐(架构不符)</td>
+					<td><strong>playwriter</strong>:必须装 Chrome 扩展才能用,CLI 独立模式无法操作浏览器</td>
+			</tr>
+			<tr>
+					<td>❌ 未安装</td>
+					<td><strong>browser-use MCP</strong>(302AI/BrowserUse):npm 无此包,属 Python 生态,不适用 npm 安装</td>
+			</tr>
+			<tr>
+					<td>💾 安装文件</td>
+					<td>全部保留于 <code>~/mcp-browser-test/</code>(5 个独立目录 + 690MB 浏览器缓存)</td>
+			</tr>
+	</tbody>
+</table>
+<p><strong>给 dsh 的建议</strong>:首选 <code>@playwright/mcp</code>(启动最快、导航 1.5s、25 工具、内存 126MB),其次 <code>chrome-devtools-mcp</code>(32 工具最全、两步导航 0.9s)。两者均通过 stdio 协议,可直接由 dsh-mcp-client 挂载(serverName/command/args)。</p>
+<hr>
+<h2 id="2-测试环境">2. 测试环境</h2>
+<table>
+	<thead>
+			<tr>
+					<th>项</th>
+					<th>值</th>
+			</tr>
+	</thead>
+	<tbody>
+			<tr>
+					<td>系统</td>
+					<td>云主机 Linux(10T 磁盘剩 99%)</td>
+			</tr>
+			<tr>
+					<td>Node / npm</td>
+					<td>v22.23.2 / 10.9.8</td>
+			</tr>
+			<tr>
+					<td>npm 源</td>
+					<td>npmmirror(国内镜像)</td>
+			</tr>
+			<tr>
+					<td>浏览器二进制</td>
+					<td>系统 chromium 146(<code>/usr/local/bin/chromium</code>)+ 9222 端口 Chrome 146 + playwright 下载的 chromium 1248/1252(headless shell,690MB)</td>
+			</tr>
+			<tr>
+					<td>测试目标页</td>
+					<td>本机 <code>http://127.0.0.1:8080/</code>(AIO Sandbox)——模拟&quot;服务器面板/监控&quot;本地访问场景</td>
+			</tr>
+			<tr>
+					<td>测试脚本</td>
+					<td><code>~/mcp-browser-test/handshake.js</code>(握手)、<code>nav-test.js</code> / <code>final-test.js</code>(导航)</td>
+			</tr>
+	</tbody>
+</table>
+<hr>
+<h2 id="3-安装清单保留安装文件">3. 安装清单(保留安装文件)</h2>
+<table>
+	<thead>
+			<tr>
+					<th>包</th>
+					<th>版本</th>
+					<th>目录(bin 入口)</th>
+			</tr>
+	</thead>
+	<tbody>
+			<tr>
+					<td>@playwright/mcp</td>
+					<td>0.0.84</td>
+					<td><code>~/mcp-browser-test/playwright-mcp/</code>(<code>node_modules/@playwright/mcp/cli.js</code>)</td>
+			</tr>
+			<tr>
+					<td>chrome-devtools-mcp</td>
+					<td>1.12.0</td>
+					<td><code>~/mcp-browser-test/chrome-devtools-mcp/</code>(<code>build/src/bin/chrome-devtools-mcp.js</code>)</td>
+			</tr>
+			<tr>
+					<td>puppeteer-mcp-server</td>
+					<td>0.7.2</td>
+					<td><code>~/mcp-browser-test/puppeteer-mcp-server/</code>(<code>dist/index.js</code>)</td>
+			</tr>
+			<tr>
+					<td>@executeautomation/playwright-mcp-server</td>
+					<td>1.0.12</td>
+					<td><code>~/mcp-browser-test/ea-playwright-mcp/</code>(<code>dist/index.js</code>)</td>
+			</tr>
+			<tr>
+					<td>playwriter</td>
+					<td>0.9.0</td>
+					<td><code>~/mcp-browser-test/playwriter/</code>(<code>bin.js</code>)</td>
+			</tr>
+			<tr>
+					<td>browser-use MCP</td>
+					<td>—</td>
+					<td>npm 无此包(<code>@browser-use/mcp-server</code> / <code>mcp-server-browser-use</code> / <code>browser-use-mcp-server</code> 均 NOT_FOUND,Python 生态)</td>
+			</tr>
+	</tbody>
+</table>
+<p>浏览器二进制缓存:<code>PLAYWRIGHT_BROWSERS_PATH=~/mcp-browser-test/.browsers</code>(690MB,含 chromium-1248/1252、chromium_headless_shell-1248/1252、ffmpeg-1013)。
+下载关键:默认路径 <code>/opt/vm/preinstall</code> 无写权限(EACCES),必须显式指定 <code>PLAYWRIGHT_BROWSERS_PATH</code>;镜像 <code>PLAYWRIGHT_DOWNLOAD_HOST=https://cdn.npmmirror.com/binaries/playwright</code> 可秒级下载。</p>
+<hr>
+<h2 id="4-mcp-stdio-握手测试initialize--toolslist">4. MCP stdio 握手测试(initialize + tools/list)</h2>
+<table>
+	<thead>
+			<tr>
+					<th>Server</th>
+					<th>init 耗时</th>
+					<th>工具数</th>
+					<th>内存(RSS)</th>
+					<th>协议版本</th>
+					<th>代表工具</th>
+			</tr>
+	</thead>
+	<tbody>
+			<tr>
+					<td>@playwright/mcp</td>
+					<td><strong>531ms</strong></td>
+					<td>25</td>
+					<td>126MB</td>
+					<td>2025-03-26</td>
+					<td>browser_navigate / browser_click / browser_type / browser_snapshot</td>
+			</tr>
+			<tr>
+					<td>chrome-devtools-mcp</td>
+					<td>1.5s</td>
+					<td><strong>32</strong></td>
+					<td>148MB</td>
+					<td>2025-03-26</td>
+					<td>navigate_page / click / fill / evaluate_script / screenshot</td>
+			</tr>
+			<tr>
+					<td>puppeteer-mcp-server</td>
+					<td>3.9s</td>
+					<td>8</td>
+					<td><strong>90MB</strong></td>
+					<td>2024-11-05(旧)</td>
+					<td>puppeteer_navigate / puppeteer_click / puppeteer_fill</td>
+			</tr>
+			<tr>
+					<td>ea-playwright-mcp</td>
+					<td>6.7s</td>
+					<td><strong>33</strong></td>
+					<td>109MB</td>
+					<td>2025-03-26</td>
+					<td>playwright_navigate / playwright_fill / start_codegen_session</td>
+			</tr>
+			<tr>
+					<td>playwriter</td>
+					<td>8.1s</td>
+					<td>2</td>
+					<td>121MB</td>
+					<td>2025-03-26</td>
+					<td>execute / reset</td>
+			</tr>
+	</tbody>
+</table>
+<p>要点:全部 5 个包握手成功;playwright 启动最快、内存中等;puppeteer 内存最小但工具最少且协议版本旧;ea 工具最多但启动最慢;playwriter 只有 2 个工具(面向扩展的命令通道)。</p>
+<hr>
+<h2 id="5-真实导航测试访问-http1270018080">5. 真实导航测试(访问 http://127.0.0.1:8080/)</h2>
+<table>
+	<thead>
+			<tr>
+					<th>Server</th>
+					<th>结果</th>
+					<th>耗时</th>
+					<th>说明</th>
+			</tr>
+	</thead>
+	<tbody>
+			<tr>
+					<td>@playwright/mcp</td>
+					<td>✅ 成功</td>
+					<td>1.5s(冷启动含下载后首跑 4.4s)</td>
+					<td>Page Title 已确认:<code>AIO Sandbox</code>;参数 <code>--browser chromium --headless</code>,需 playwright 浏览器</td>
+			</tr>
+			<tr>
+					<td>chrome-devtools-mcp</td>
+					<td>✅ 成功</td>
+					<td>0.9s</td>
+					<td>两步调用:<code>list_pages</code> 拿 pageId → <code>navigate_page {pageId, url}</code>;工具名是 <strong>navigate_page 不是 navigate</strong></td>
+			</tr>
+			<tr>
+					<td>puppeteer-mcp-server</td>
+					<td>✅ 成功</td>
+					<td>3.1s(首轮 5.0s)</td>
+					<td><code>Successfully navigated ... (Status: 200)</code>,自动复用系统 chromium</td>
+			</tr>
+			<tr>
+					<td>ea-playwright-mcp</td>
+					<td>❌ 失败</td>
+					<td>—</td>
+					<td>锁死 <code>chromium-1200/chrome-linux64/chrome</code>,而当前 playwright 下载的是 1248/1252;补装 1200 需匹配其内置 playwright 版本,镜像未见旧 build</td>
+			</tr>
+			<tr>
+					<td>playwriter</td>
+					<td>❌ 失败</td>
+					<td>—</td>
+					<td><code>The Playwriter Chrome extension is not connected</code>,必须装 Chrome 扩展,CLI 独立模式不可用</td>
+			</tr>
+	</tbody>
+</table>
+<p>首轮踩坑记录:</p>
+<ul>
+<li>playwright:默认找 <code>chrome</code> 发行版报错 → 显式 <code>--browser chromium</code> 解决(需先下载 chromium);</li>
+<li>chrome-devtools:误调 <code>navigate</code> 报 <code>Tool navigate disabled</code> → 实际工具名为 <code>navigate_page</code>,且需先 <code>list_pages</code>;</li>
+<li>puppeteer:无坑,开箱即用;</li>
+<li>ea:<code>Executable doesn't exist at .browsers/chromium-1200/...</code>,旧 build 锁定;</li>
+<li>playwriter:报 <code>expected string, received undefined at code</code> → 参数为 <code>code</code>,但无扩展时仍拒绝执行。</li>
+</ul>
+<hr>
+<h2 id="6-兼容性评估">6. 兼容性评估</h2>
+<table>
+	<thead>
+			<tr>
+					<th>维度</th>
+					<th>@playwright/mcp</th>
+					<th>chrome-devtools-mcp</th>
+					<th>puppeteer-mcp-server</th>
+					<th>ea</th>
+					<th>playwriter</th>
+			</tr>
+	</thead>
+	<tbody>
+			<tr>
+					<td>安装复杂度</td>
+					<td>中(需下载 chromium)</td>
+					<td>低(复用系统浏览器/连 9222)</td>
+					<td>低(自动找浏览器)</td>
+					<td>高(旧 build 锁定)</td>
+					<td>高(需浏览器扩展)</td>
+			</tr>
+			<tr>
+					<td>浏览器依赖</td>
+					<td>playwright 自带 build</td>
+					<td>Chrome 144+ 或系统 chromium</td>
+					<td>chrome/chromium 任意</td>
+					<td>playwright 1200 旧 build</td>
+					<td>无(走扩展)</td>
+			</tr>
+			<tr>
+					<td>工具完整度</td>
+					<td>高(25)</td>
+					<td>最高(32)</td>
+					<td>低(8)</td>
+					<td>最高(33)</td>
+					<td>极低(2)</td>
+			</tr>
+			<tr>
+					<td>无头模式</td>
+					<td>✅ &ndash;headless</td>
+					<td>✅ &ndash;headless</td>
+					<td>✅ 默认无头</td>
+					<td>✅ 默认无头</td>
+					<td>依赖扩展</td>
+			</tr>
+			<tr>
+					<td>远程连接</td>
+					<td>内建</td>
+					<td>✅ <code>-u http://127.0.0.1:9222</code></td>
+					<td>支持连接 active tab</td>
+					<td>内建</td>
+					<td>不适用</td>
+			</tr>
+			<tr>
+					<td>稳定性</td>
+					<td>高</td>
+					<td>高</td>
+					<td>高</td>
+					<td>中(安装易超时/目录被清空)</td>
+					<td>低(CLI 模式)</td>
+			</tr>
+			<tr>
+					<td>dsh-mcp-client 适配</td>
+					<td>✅ stdio</td>
+					<td>✅ stdio</td>
+					<td>✅ stdio</td>
+					<td>✅ stdio</td>
+					<td>不推荐</td>
+			</tr>
+	</tbody>
+</table>
+<p>实测中的两个环境级问题(与包本身无关,但影响安装):</p>
+<ol>
+<li><code>npx playwright install</code> 默认写 <code>/opt/vm/preinstall</code> 报 EACCES → 必须设 <code>PLAYWRIGHT_BROWSERS_PATH</code>;</li>
+<li>npm 长安装命令偶发 <code>flow.mcp.proxy RPC 失败</code>(基础设施网络错误),ea 重装 3 次未完成——属于网络波动,非包缺陷。</li>
+</ol>
+<hr>
+<h2 id="7-性能对比摘要">7. 性能对比摘要</h2>
+<pre tabindex="0"><code>启动速度:   @playwright(0.5s) &gt; cdp(1.5s) &gt; puppeteer(3.9s) &gt; ea(6.7s) &gt; playwriter(8.1s)
+导航速度:   cdp(0.9s) &gt; @playwright(1.5s) &gt; puppeteer(3.1s)
+内存占用:   puppeteer(90MB) &lt; ea(109MB) &lt; playwriter(121MB) &lt; @playwright(126MB) &lt; cdp(148MB)
+工具数量:   ea(33) = cdp(32) &gt; @playwright(25) &gt; puppeteer(8) &gt; playwriter(2)
+</code></pre><ul>
+<li>单次导航(本机回环)实际耗时均在 5 秒内,headless 首启需额外 1~4 秒;</li>
+<li>内存普遍 90~150MB,对常驻 MCP server 可接受;</li>
+<li>若挂入 dsh-mcp-client(stdio),@playwright/mcp 或 chrome-devtools-mcp 是平衡最佳;puppeteer 适合轻量场景(内存最小但能力少)。</li>
+</ul>
+<hr>
+<h2 id="8-后续建议与-dsh-主线衔接">8. 后续建议(与 dsh 主线衔接)</h2>
+<ol>
+<li><strong>挂载</strong>:在 <code>~/.dsh/profiles/web/cordis.patch.yml</code> 的 mcp 段新增,如
+<code>@playwright/mcp</code> → <code>command: node, args: [&lt;绝对路径&gt;/cli.js, --browser, chromium, --headless], env: PLAYWRIGHT_BROWSERS_PATH=~/mcp-browser-test/.browsers</code>。</li>
+<li><strong>登录类网页(面板/监控)</strong>:MCP 侧具备 navigate/click/fill 能力;若面板需要账号密码,可用 dsh 的 bash 工具 curl 登录态或 MCP 模拟,视具体面板而定。</li>
+<li><strong>真实面板端到端验证</strong>:需用户提供真实面板 URL + 凭据后再实测(本机当前无真实面板,8080 为 AIO Sandbox 测试页)。</li>
+</ol>
+<hr>
+<h2 id="9-附保留的安装文件清单">9. 附:保留的安装文件清单</h2>
+<pre tabindex="0"><code>~/mcp-browser-test/
+├── handshake.js / nav-test.js / nav2.js / nav3.js / final-test.js / fix2.js / pw-test.js   # 测试脚本
+├── playwright-mcp/      # @playwright/mcp 0.0.84 + 依赖
+├── chrome-devtools-mcp/ # chrome-devtools-mcp 1.12.0 + 依赖
+├── puppeteer-mcp-server/# puppeteer-mcp-server 0.7.2 + 依赖
+├── ea-playwright-mcp/   # @executeautomation/playwright-mcp-server 1.0.12(重装未完成,目录被清空)
+├── playwriter/          # playwriter 0.9.0 + 依赖
+└── .browsers/           # 690MB:chromium-1248/1252、chromium_headless_shell-1248/1252、ffmpeg-1013
+</code></pre><p>(本报告由实测数据整理,所有数字来自 2026-11-02 实测输出;ea 重装失败项已在正文标注。)</p>
+
+  </div>
+
+  <nav class="post-nav">
+    
+    
+      <a class="next" href="/posts/dsh-subagent%E6%A8%A1%E5%9E%8B%E9%80%89%E6%8B%A9%E5%AE%9E%E6%B5%8B%E6%8A%A5%E5%91%8A/">dsh 子智能体模型选择：机制、根因排查与实测报告 →</a>
+    
+  </nav>
+</article>
+
+  </main><footer>
+  <span>© 2026 zjx 的手记 · 由 Hugo 生成</span>
+  <span>
+    <a href="zhoujiaxuan0729" target="_blank" rel="noopener">GitHub</a>
+    <a href="mailto:zhoujiaxuan45@outlook.com">邮件</a>
+  </span>
+</footer>
+</div><script>
+  
+  (function () {
+    var btn = document.getElementById('themeToggle');
+    if (!btn) return;
+    btn.addEventListener('click', function () {
+      var isDark = document.documentElement.classList.toggle('dark');
+      try { localStorage.setItem('theme', isDark ? 'dark' : 'light'); } catch (e) {}
+    });
+  })();
+</script>
+</body>
+</html>

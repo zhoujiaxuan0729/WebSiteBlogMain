@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+	<channel>
+		<title>AI on 可能是一个凑数的blog?(但显然不是)</title>
+		<link>http://192.168.3.3:4096/tags/ai/</link>
+		<description>Recent content in AI on 可能是一个凑数的blog?(但显然不是)</description>
+		<generator>Hugo</generator>
+		<language>zh-cn</language>
+		
+		
+		
+		
+			<lastBuildDate>Sat, 31 Oct 2026 00:00:00 +0000</lastBuildDate>
+		
+			<atom:link href="http://192.168.3.3:4096/tags/ai/index.xml" rel="self" type="application/rss+xml" />
+			<item>
+				<title>麒麟 980 手机本地跑 DeepSeek 实测</title>
+				<link>http://192.168.3.3:4096/posts/deepseek-on-kirin980/</link>
+				<pubDate>Sat, 31 Oct 2026 00:00:00 +0000</pubDate>
+				<guid>http://192.168.3.3:4096/posts/deepseek-on-kirin980/</guid>
+				<description>&lt;h2 id=&#34;测试环境&#34;&gt;测试环境&lt;/h2&gt;&#xA;&lt;ul&gt;&#xA;&lt;li&gt;手机：荣耀 20（麒麟 980，6GB 内存）&lt;/li&gt;&#xA;&lt;li&gt;系统：AidLux（Ubuntu 容器）&lt;/li&gt;&#xA;&lt;li&gt;模型：DeepSeek 量化版 GGUF&lt;/li&gt;&#xA;&lt;/ul&gt;&#xA;&lt;h2 id=&#34;实际表现&#34;&gt;实际表现&lt;/h2&gt;&#xA;&lt;p&gt;对话生成速度大约 3~5 token/s，日常问答够用，但长输出要等。内存占用峰值约 2.3GB，发热明显，建议接风扇。&lt;/p&gt;&#xA;&lt;h2 id=&#34;结论&#34;&gt;结论&lt;/h2&gt;&#xA;&lt;p&gt;适合尝鲜和短问答，不能指望它替代云端 API。&lt;/p&gt;</description>
+			</item>
+	</channel>
+</rss>

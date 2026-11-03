@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="zh-CN"><head><script src="/livereload.js?mindelay=10&amp;v=2&amp;port=4096&amp;path=livereload" data-no-instant defer></script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>DSH（DeepSeek Harness）插件生态质量与兼容性调研报告 · 可能是一个凑数的blog?(但显然不是)</title>
+  <meta name="description" content="1. 插件总量：全量索引口径约 1.5 万&#43;（dshplugin.store 同步 GitHub dsh-plugin 话题：22975 仓库/15294 插件），审核收录口径 2500（dshmk.">
+  <script>
+    
+    (function () {
+      try {
+        var saved = localStorage.getItem('theme');
+        if (saved === 'dark' || (!saved && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+          document.documentElement.classList.add('dark');
+        }
+      } catch (e) {}
+    })();
+  </script>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='18' fill='%23B45309'/%3E%3Ctext x='50' y='68' font-size='52' text-anchor='middle' fill='%23FFFBEF' font-family='serif' font-weight='bold'%3Ez%3C/text%3E%3C/svg%3E">
+  <link rel="stylesheet" href="/css/main.css">
+  </head>
+<body>
+<div class="wrap"><header class="site">
+  <div class="brand">
+    <a href="/">可能是一个凑数的blog?(但显然不是)<span class="dot">.</span></a>
+  </div>
+  <p class="tagline">sha包原话:一台手机，几行代码，一些在 Termux 和 AidLux 里折腾出来的零碎记录。关于编程、网络，和一切让我着迷的小实验。
+你说这装不装，但我又不知道该写点啥在这。</p>
+  <nav class="top">
+    <a href="/">首页</a>
+    
+      <a href="/posts/">归档</a>
+    
+      <a href="/about/">关于</a>
+    
+      <a href="/index.xml">RSS</a>
+    
+    <button class="theme-toggle" id="themeToggle" aria-label="切换夜间模式" title="切换夜间模式">
+      <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+      </svg>
+      <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="12" r="5"/>
+        <line x1="12" y1="1" x2="12" y2="3"/>
+        <line x1="12" y1="21" x2="12" y2="23"/>
+        <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/>
+        <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
+        <line x1="1" y1="12" x2="3" y2="12"/>
+        <line x1="21" y1="12" x2="23" y2="12"/>
+        <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/>
+        <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
+      </svg>
+    </button>
+  </nav>
+</header>
+<main>
+<article class="post">
+  <header class="post-header">
+    <h1>DSH（DeepSeek Harness）插件生态质量与兼容性调研报告</h1>
+    <div class="meta">
+      <span>2026-11-01</span>
+      <span>约 2 分钟读完</span>
+      
+        <span>
+          <a class="tag-inline" href="/tags/%E5%AF%B9%E8%AF%9D%E6%8A%A5%E5%91%8A/">对话报告</a>
+        </span>
+      
+    </div>
+  </header>
+
+  <div class="post-body">
+    <h1 id="dshdeepseek-harness插件生态质量与兼容性调研报告">DSH（DeepSeek Harness）插件生态质量与兼容性调研报告</h1>
+<blockquote>
+<p><strong>记录时间</strong>：2026-11-01
+<strong>调研范围</strong>：dsh 插件搜索途径、数量、功能分类、质量信号、版本要求标注率、兼容性实测
+<strong>合规说明</strong>：dsh 为 DeepSeek 开源项目；数据来自官方文档、社区目录站与本地 npm 实测</p>
+</blockquote>
+<hr>
+<h2 id="一核心结论">一、核心结论</h2>
+<ol>
+<li><strong>插件总量</strong>：全量索引口径约 <strong>1.5 万+</strong>（dshplugin.store 同步 GitHub <code>dsh-plugin</code> 话题：22975 仓库/15294 插件），审核收录口径 <strong>2500</strong>（dshmk.com），官方 npm 目录包收录 <strong>4092</strong>（dsh-plugin-catalog）。</li>
+<li><strong>质量总评</strong>：机制完善但生态早期——所有核心框架包均为 rc/alpha 预发布版；兼容性检查能拦下不匹配插件，但版本漂移严重（官方插件之间也会互相不兼容）。</li>
+<li><strong>版本要求标注率</strong>：<strong>仅 27.4%</strong>（4092 个插件中 1123 个标注 <code>engines.dsh</code>），多数插件未声明 dsh 版本兼容范围。</li>
+</ol>
+<h2 id="二插件搜索途径7-个">二、插件搜索途径（7 个）</h2>
+<table>
+	<thead>
+			<tr>
+					<th>途径</th>
+					<th>类型</th>
+					<th>规模/特点</th>
+			</tr>
+	</thead>
+	<tbody>
+			<tr>
+					<td>dshplugin.store</td>
+					<td>社区目录</td>
+					<td>22975 仓库/15294 插件（2026-10-30 同步），18 分类</td>
+			</tr>
+			<tr>
+					<td>dshmk.com</td>
+					<td>社区市场</td>
+					<td>2500 插件/11 分类，30 分钟同步 GitHub，有排行榜与 API</td>
+			</tr>
+			<tr>
+					<td>dsh.so</td>
+					<td>社区注册表</td>
+					<td>安全扫描 + 沙盒安装实测（L4/L5），可加为索引源</td>
+			</tr>
+			<tr>
+					<td>dsh-plugin.app</td>
+					<td>目录站</td>
+					<td>精选式</td>
+			</tr>
+			<tr>
+					<td>deepseek-plugin.org</td>
+					<td>教程站</td>
+					<td>安装方法指南</td>
+			</tr>
+			<tr>
+					<td>GitHub topic <code>dsh-plugin</code></td>
+					<td>源头仓库</td>
+					<td>目录站数据来源</td>
+			</tr>
+			<tr>
+					<td>Visual Studio Marketplace / JetBrains Marketplace</td>
+					<td>IDE 集成</td>
+					<td>DSH Agent Sidebar GT112、DSH Studio 等</td>
+			</tr>
+	</tbody>
+</table>
+<blockquote>
+<p>插件本质是 npm 包，安装命令：<code>dsh plugin --profile web add &lt;spec&gt;</code>（github:xxx / npm:xxx）；DSH 不内置索引源，市场索引需用户手动添加（https 优先）。</p>
+</blockquote>
+<h2 id="三功能分类统计">三、功能分类统计</h2>
+<h3 id="31-dshmkcom-口径2500-收录2026-10-31">3.1 dshmk.com 口径（2500 收录，2026-10-31）</h3>
+<table>
+	<thead>
+			<tr>
+					<th>分类</th>
+					<th>数量</th>
+					<th>占比</th>
+			</tr>
+	</thead>
+	<tbody>
+			<tr>
+					<td>开发工具</td>
+					<td>1399</td>
+					<td>56.0%</td>
+			</tr>
+			<tr>
+					<td>Agent 与会话</td>
+					<td>298</td>
+					<td>11.9%</td>
+			</tr>
+			<tr>
+					<td>界面增强</td>
+					<td>177</td>
+					<td>7.1%</td>
+			</tr>
+			<tr>
+					<td>模型与 MCP</td>
+					<td>33</td>
+					<td>1.3%</td>
+			</tr>
+			<tr>
+					<td>生活娱乐</td>
+					<td>31</td>
+					<td>1.2%</td>
+			</tr>
+			<tr>
+					<td>部署运维</td>
+					<td>15</td>
+					<td>0.6%</td>
+			</tr>
+			<tr>
+					<td>学习研究</td>
+					<td>6</td>
+					<td>0.2%</td>
+			</tr>
+	</tbody>
+</table>
+<h3 id="32-dshpluginstore-口径15294-插件多标签合计总数">3.2 dshplugin.store 口径（15294 插件，多标签，合计&gt;总数）</h3>
+<p>Web UI 6868、Skills 2449、Tools 2313、Workspace 2030、Auth 1827、Desktop 1627、Memory 1407、MCP 1299、Coding 1247、Theme 1075、Notify 1027、Fun 1010、Vision 843、Search 504、Browser 403。</p>
+<blockquote>
+<p>技术类（Skills/Tools/Coding/MCP）合计约 7300 标签量级；Web UI 类占绝对多数但含大量主题/皮肤/桌宠类。</p>
+</blockquote>
+<h2 id="四质量评估">四、质量评估</h2>
+<h3 id="41-版本成熟度风险最高项">4.1 版本成熟度（风险最高项）</h3>
+<ul>
+<li>dsh 本体：<code>@deepseek-ai/dsh 0.2.1-rc.5</code>（latest，预发布）</li>
+<li>核心分包：dsh-llm/tools/session/agent/skill/compaction 等全部 0.0.1-rc.x / 0.1.x-rc（预发布）</li>
+<li><strong>0.1.x → 0.2.x 存在破坏性变更</strong>（0.2 移除部分 API，0.1.x 不再受支持）；部分插件锁单版本（如 dsh-consult 仅支持 0.1.5-rc.2）</li>
+<li>Node.js 要求 &gt;=22.19（实测 22.23.2 满足）</li>
+</ul>
+<h3 id="42-更新维护">4.2 更新维护</h3>
+<ul>
+<li>dshmk.com 排行榜今日 star 增长个位数（+3~+6），热度平稳偏小众</li>
+<li>头部插件迭代频繁：dsh-context 0.78.x 高频发版、dsh-market 9.8k★、dsh-desktop 34k★、modlens 4.6k★</li>
+<li>收录站&quot;已验证&quot;为结构级验证；dsh.so 提供实机沙盒验证（更强）</li>
+</ul>
+<h3 id="43-star-分布">4.3 Star 分布</h3>
+<ul>
+<li>头部通用 Agent 项目高星（open-design 105k★、archify 92k★）</li>
+<li>dsh 专属插件以 1k~35k★ 为主，长尾大量 &lt;1k★</li>
+</ul>
+<h2 id="五版本要求标注情况本次量化统计">五、版本要求标注情况（本次量化统计）</h2>
+<p><strong>数据源</strong>：官方 npm 目录包 <code>dsh-plugin-catalog</code>（2026.1031.13045，4092 条目）实测解析。</p>
+<table>
+	<thead>
+			<tr>
+					<th>指标</th>
+					<th>数值</th>
+			</tr>
+	</thead>
+	<tbody>
+			<tr>
+					<td>插件总数</td>
+					<td>4092</td>
+			</tr>
+			<tr>
+					<td>标注 <code>engines.dsh</code> 的插件</td>
+					<td><strong>1123（27.4%）</strong></td>
+			</tr>
+			<tr>
+					<td>未标注（按 peer 依赖兜底检查）</td>
+					<td>2969（72.6%）</td>
+			</tr>
+			<tr>
+					<td>目录收录版本条目</td>
+					<td>每插件 1 条（目录快照，不代表实际版本数）</td>
+			</tr>
+	</tbody>
+</table>
+<p><strong>机制说明</strong>（官方插件市场文档）：</p>
+<ul>
+<li><code>engines.dsh</code>：该版本可运行的 dsh SemVer 范围；缺省表示任意版本</li>
+<li>未声明 <code>engines.dsh</code> 的包按其 <code>@deepseek-ai/dsh*</code> peer 依赖检查</li>
+<li>安装时双重检查（索引 engines + 包自身 engines/peer），不匹配直接拒绝</li>
+<li>不兼容时可 <code>dsh plugin allow-version --accept-risk</code> 强制装（警告：可能导致崩溃或数据丢失）</li>
+</ul>
+<h2 id="六兼容性实测报告2026-11-01本地">六、兼容性实测报告（2026-11-01，本地）</h2>
+<p><strong>环境</strong>：Linux 沙箱，Node v22.23.2，npm 10.9.8，dsh 0.2.1-rc.5（@deepseek-ai/dsh）。</p>
+<table>
+	<thead>
+			<tr>
+					<th>插件</th>
+					<th>版本要求声明</th>
+					<th>实测结果</th>
+			</tr>
+	</thead>
+	<tbody>
+			<tr>
+					<td>dsh-context 0.78.2</td>
+					<td>engines.dsh <code>&gt;=0.2.0-rc.2</code>；peer: cordis ^4.0.4 等</td>
+					<td>✅ 安装成功（有 peer 警告但可用）</td>
+			</tr>
+			<tr>
+					<td>@deepseek-ai/dsh-compaction 0.0.1-rc.5</td>
+					<td>peer 要求 dsh-llm/brand/session/commands/invariants 全部 ^0.0.1-rc.5</td>
+					<td>❌ 被拒绝（运行时为 rc.1，版本漂移）</td>
+			</tr>
+	</tbody>
+</table>
+<p><strong>结论</strong>：官方插件自身也存在 peer 版本漂移导致装不上的情况；安装前必须核对 <code>engines.dsh</code> 与 peer 依赖范围。</p>
+<h2 id="七实操建议">七、实操建议</h2>
+<ol>
+<li>装前查看插件 <code>engines.dsh</code> 是否覆盖当前 dsh 版本（0.1.x 与 0.2.x 不互通）</li>
+<li>优先选择持续发版、声明兼容范围的插件（更新维护信号强）</li>
+<li><strong>固定 dsh 本体版本，不轻易升级 rc</strong>（升级可能导致已装插件集体失效）</li>
+<li>可加 dsh.so 索引源（带实机验证）或用 <code>dsh-plugin-catalog</code> 做目录（npm 安装）</li>
+<li>技术底座类（MCP/编码/部署运维）插件选择面小（33/15 个），装前确认维护活跃度</li>
+</ol>
+<h2 id="八数据来源">八、数据来源</h2>
+<ul>
+<li>官方文档：https://deepseek-harness.github.io/deepseek-harness/guide/plugin-market</li>
+<li>dshplugin.store（2026-10-30 同步数据）</li>
+<li>dshmk.com（2026-10-31 数据）</li>
+<li>dsh.so / deepseek-plugin.org / Obsidian 插件页 / dsh-full-remote、dsh-consult 兼容性文档</li>
+<li>本地实测：npm 安装 @deepseek-ai/dsh@0.2.1-rc.5 + dsh-plugin-catalog 解析统计 + 插件安装测试</li>
+</ul>
+<p><em>本报告由豆包工作助手整理，供 dsh 用户取用；第三方目录站与 DeepSeek AI 官方无隶属关系。</em></p>
+
+  </div>
+
+  <nav class="post-nav">
+    
+      <a class="prev" href="/posts/dsh%E7%9F%A5%E8%AF%86%E5%BA%93%E6%8F%92%E4%BB%B6%E5%AE%9E%E6%B5%8B%E5%AF%B9%E6%AF%94%E6%8A%A5%E5%91%8A/">← dsh 知识库/向量记忆插件实测对比报告</a>
+    
+    
+      <a class="next" href="/posts/%E6%A8%A1%E5%9E%8B%E8%B7%AF%E7%94%B1%E5%A4%9A%E6%A8%A1%E5%9E%8B%E8%B0%83%E5%BA%A6%E8%B0%83%E7%A0%94%E6%8A%A5%E5%91%8A/">模型路由 / 多模型调度 / DeepSeek 调用其他模型 —— 9 对象可用性调研 →</a>
+    
+  </nav>
+</article>
+
+  </main><footer>
+  <span>© 2026 zjx 的手记 · 由 Hugo 生成</span>
+  <span>
+    <a href="zhoujiaxuan0729" target="_blank" rel="noopener">GitHub</a>
+    <a href="mailto:zhoujiaxuan45@outlook.com">邮件</a>
+  </span>
+</footer>
+</div><script>
+  
+  (function () {
+    var btn = document.getElementById('themeToggle');
+    if (!btn) return;
+    btn.addEventListener('click', function () {
+      var isDark = document.documentElement.classList.toggle('dark');
+      try { localStorage.setItem('theme', isDark ? 'dark' : 'light'); } catch (e) {}
+    });
+  })();
+</script>
+</body>
+</html>

@@ -1,0 +1,465 @@
+<!DOCTYPE html>
+<html lang="zh-CN"><head><script src="/livereload.js?mindelay=10&amp;v=2&amp;port=4096&amp;path=livereload" data-no-instant defer></script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>dsh 子智能体模型选择：机制、根因排查与实测报告 · 可能是一个凑数的blog?(但显然不是)</title>
+  <meta name="description" content="- 包：@deepseek-ai/dsh-tool-subagent（profile 内 lib/index.js &#43; lib/model-selection-settings.js）">
+  <script>
+    
+    (function () {
+      try {
+        var saved = localStorage.getItem('theme');
+        if (saved === 'dark' || (!saved && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+          document.documentElement.classList.add('dark');
+        }
+      } catch (e) {}
+    })();
+  </script>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='18' fill='%23B45309'/%3E%3Ctext x='50' y='68' font-size='52' text-anchor='middle' fill='%23FFFBEF' font-family='serif' font-weight='bold'%3Ez%3C/text%3E%3C/svg%3E">
+  <link rel="stylesheet" href="/css/main.css">
+  </head>
+<body>
+<div class="wrap"><header class="site">
+  <div class="brand">
+    <a href="/">可能是一个凑数的blog?(但显然不是)<span class="dot">.</span></a>
+  </div>
+  <p class="tagline">sha包原话:一台手机，几行代码，一些在 Termux 和 AidLux 里折腾出来的零碎记录。关于编程、网络，和一切让我着迷的小实验。
+你说这装不装，但我又不知道该写点啥在这。</p>
+  <nav class="top">
+    <a href="/">首页</a>
+    
+      <a href="/posts/">归档</a>
+    
+      <a href="/about/">关于</a>
+    
+      <a href="/index.xml">RSS</a>
+    
+    <button class="theme-toggle" id="themeToggle" aria-label="切换夜间模式" title="切换夜间模式">
+      <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+      </svg>
+      <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="12" r="5"/>
+        <line x1="12" y1="1" x2="12" y2="3"/>
+        <line x1="12" y1="21" x2="12" y2="23"/>
+        <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/>
+        <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
+        <line x1="1" y1="12" x2="3" y2="12"/>
+        <line x1="21" y1="12" x2="23" y2="12"/>
+        <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/>
+        <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
+      </svg>
+    </button>
+  </nav>
+</header>
+<main>
+<article class="post">
+  <header class="post-header">
+    <h1>dsh 子智能体模型选择：机制、根因排查与实测报告</h1>
+    <div class="meta">
+      <span>2026-11-01</span>
+      <span>约 4 分钟读完</span>
+      
+        <span>
+          <a class="tag-inline" href="/tags/%E5%AF%B9%E8%AF%9D%E6%8A%A5%E5%91%8A/">对话报告</a>
+        </span>
+      
+    </div>
+  </header>
+
+  <div class="post-body">
+    <h1 id="dsh-子智能体模型选择机制根因排查与实测报告">dsh 子智能体模型选择：机制、根因排查与实测报告</h1>
+<blockquote>
+<p>结论先行：<strong>dsh 设计上原生支持子智能体（subagent）更换模型</strong>，非第三方 hack。本次已完成端到端实测：设置落盘、工具注册、模型列举全部通过；期间定位并修复了一个部署层面的根因（官方包双份实例导致设置保存被拒）。</p>
+<p>实测日期：2026-11-01 ~ 2026-11-02　环境：云电脑，dsh @deepseek-ai/dsh 0.2.1-rc.5，profile web</p>
+</blockquote>
+<hr>
+<h2 id="1-摘要">1. 摘要</h2>
+<table>
+	<thead>
+			<tr>
+					<th>项目</th>
+					<th>结论</th>
+			</tr>
+	</thead>
+	<tbody>
+			<tr>
+					<td>dsh 是否设计上支持 subagent 换模型</td>
+					<td><strong>是</strong>。内核 <code>dsh-tool-subagent</code> 包原生实现 <code>modelSelectionSettings</code>，开启后 subagent 工具 schema 扩展 <code>provider / model / reasoning_effort</code> 三字段，并注册 <code>list_subagent_models</code> 工具</td>
+			</tr>
+			<tr>
+					<td>换模型生效于哪种子代理</td>
+					<td><strong>仅 spawn 型 subagent</strong>。<code>subagent_fork</code>（fork 型）设计上永远继承父模型（复用 KV Cache），不可能有 provider/model 字段</td>
+			</tr>
+			<tr>
+					<td>默认行为</td>
+					<td>模型选择默认关闭（<code>enabled: false</code>），需在 GUI 或 profile 配置中显式开启并授权模型白名单</td>
+			</tr>
+			<tr>
+					<td>本次配置</td>
+					<td>3 个 provider 已注册：deepseek-official（2 模型）、zai-coding-cn 智谱（2 模型）、modelscope 魔塔（3 模型），共 7 个授权模型</td>
+			</tr>
+			<tr>
+					<td>稳定性评估</td>
+					<td>功能本身稳定（内核级、有持久化、有 revision 冲突保护）；本次唯一故障为<strong>部署结构问题</strong>（官方包双份实体拷贝导致模块实例分裂），非功能缺陷，已修复</td>
+			</tr>
+			<tr>
+					<td>效果评估</td>
+					<td>subagent 工具可精确指定 provider/model/reasoning_effort；<code>list_subagent_models</code> 可枚举全部路由；模型目录仅作参考，适配器可接受未列出的模型 id</td>
+			</tr>
+	</tbody>
+</table>
+<hr>
+<h2 id="2-功能机制内核设计层面">2. 功能机制（内核设计层面）</h2>
+<h3 id="21-模型选择扩展点">2.1 模型选择扩展点</h3>
+<ul>
+<li>包：<code>@deepseek-ai/dsh-tool-subagent</code>（profile 内 <code>lib/index.js</code> + <code>lib/model-selection-settings.js</code>）</li>
+<li>配置项：<code>Config.modelSelectionSettings: z.boolean().default(false)</code></li>
+<li>开启后，<code>defineTool</code> 参数才扩展 <code>provider / model / reasoning_effort</code> 三个字段，其中 <strong>provider 与 model 必须成对提供</strong></li>
+<li>同时注册只读工具 <strong><code>list_subagent_models</code></strong>：
+<ul>
+<li>无参调用：列出全部已注册 provider</li>
+<li>传 <code>provider</code>：列出该 provider 的模型</li>
+<li>传 <code>provider + model</code>：查看精确模型与推理强度（reasoning effort）</li>
+</ul>
+</li>
+</ul>
+<h3 id="22-spawn-与-fork-的模型约束关键设计">2.2 spawn 与 fork 的模型约束（关键设计）</h3>
+<table>
+	<thead>
+			<tr>
+					<th>子代理类型</th>
+					<th>工具</th>
+					<th>能否换模型</th>
+					<th>原因</th>
+			</tr>
+	</thead>
+	<tbody>
+			<tr>
+					<td>spawn 型</td>
+					<td><code>subagent</code></td>
+					<td><strong>能</strong>（6 字段）</td>
+					<td>新开子代理，模型路由可覆盖</td>
+			</tr>
+			<tr>
+					<td>fork 型</td>
+					<td><code>subagent_fork</code></td>
+					<td><strong>不能</strong>（3 字段）</td>
+					<td>代码注释明确：fork 复用父代理 KV Cache，provider/model 永远等同父代理</td>
+			</tr>
+	</tbody>
+</table>
+<blockquote>
+<p>权威依据：<code>dsh-subagent-fork-in-process</code> 源码注释 —— fork 子代理的 provider/model 永远等同父代理，这是<strong>设计约束</strong>，不是缺陷。</p>
+</blockquote>
+<h3 id="23-会话级投影与设置-service">2.3 会话级投影与设置 Service</h3>
+<ul>
+<li>设置持久化 key：<code>subagentModelSelectionPolicy</code>，事件 <code>subagent/model-selection-policy</code>，stateVersion 1</li>
+<li>设置 Service：<code>SubagentModelSelectionConfig</code>（Service 名 <code>subagentModelSelection</code>），实例化于 <code>model-selection-settings.js</code>
+<ul>
+<li><code>enabled</code>：boolean，默认 false</li>
+<li><code>allowedModels</code>：provider/model 路由白名单数组，启用时<strong>至少 1 条</strong>（校验宽松：provider/model 非空、不重复即可）</li>
+</ul>
+</li>
+<li>会话投影定义：<code>index.js:259-282</code>（<code>assertAllowedModelRoutes</code> / <code>recordSubagentModelSelection</code>）</li>
+<li>生效范围：<strong>新设置只对之后新建的会话生效</strong>（已实测确认）</li>
+</ul>
+<h3 id="24-provider-路由注册">2.4 provider 路由注册</h3>
+<p>dsh-llm 通过 <code>ctx.llm.registerAdapter(providers, adapter)</code> 注册路由，<code>llm.listProviders()</code> 枚举。本次 profile 注册的 provider（来自 <code>cordis.patch.yml</code>）：</p>
+<table>
+	<thead>
+			<tr>
+					<th>provider id</th>
+					<th>显示名</th>
+					<th>模型</th>
+					<th>来源</th>
+			</tr>
+	</thead>
+	<tbody>
+			<tr>
+					<td>deepseek-official</td>
+					<td>DeepSeek</td>
+					<td>deepseek-flash（默认）、deepseek-v4-pro</td>
+					<td>llm-deepseek-api-key</td>
+			</tr>
+			<tr>
+					<td>zai-coding-cn</td>
+					<td>智谱 GLM(免费)</td>
+					<td>glm-4.5-flash、glm-5.3-flash</td>
+					<td>llm-pi-ai（自定义 patch）</td>
+			</tr>
+			<tr>
+					<td>modelscope</td>
+					<td>魔塔 ModelScope(免费)</td>
+					<td>deepseek-ai/DeepSeek-V4.1-Flash-1017、Qwen/Qwen3.5-27B、ZhipuAI/GLM-5.2</td>
+					<td>llm-pi-ai（自定义 patch，baseURL api-inference.modelscope.cn）</td>
+			</tr>
+	</tbody>
+</table>
+<hr>
+<h2 id="3-配置路径">3. 配置路径</h2>
+<h3 id="31-gui-路径">3.1 GUI 路径</h3>
+<p>插件页 →「内置插件配置 · 子智能体」（设置&quot;子智能体的递归层级、数量和模型&quot;）：</p>
+<ul>
+<li>运行限制：最大递归深度（默认 1）、子智能体并行数量上限（默认 8）</li>
+<li>模型选择区：开关&quot;允许 Agent 为子智能体选择模型&quot; + &ldquo;Agent 可选择的模型&quot;多选框 + 保存按钮</li>
+</ul>
+<h3 id="32-底层写入">3.2 底层写入</h3>
+<ul>
+<li>API：<code>POST /api/settings/mutate</code></li>
+<li>命名空间：<code>subagent-model-selection-settings</code></li>
+<li>ops：<code>set enabled</code> + <code>set allowedModels</code>（路由数组 <code>{provider, model}</code>）</li>
+<li>JSON-RPC 外壳：<code>{type: &quot;client-request&quot;, rpcId, method: &quot;settings/mutate&quot;, payload: {args: {ns, ops, expectedRevision?}}}</code>（method 在<strong>顶层</strong>，args 为单层参数对象）</li>
+</ul>
+<h3 id="33-持久化位置">3.3 持久化位置</h3>
+<p>设置写入 profile 文档 <code>~/.dsh/profiles/web/cordis.patch.yml</code>（本次新增条目）：</p>
+<div class="highlight"><pre tabindex="0" style="color:#3c3836;background-color:#fbf1c7;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-yaml" data-lang="yaml"><span style="display:flex;"><span>- <span style="color:#9d0006">id</span>: subagent-model-selection-settings
+</span></span><span style="display:flex;"><span>  <span style="color:#9d0006">name</span>: <span style="color:#79740e">&#34;@deepseek-ai/dsh-tool-subagent/model-selection-settings&#34;</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#9d0006">config</span>:
+</span></span><span style="display:flex;"><span>    <span style="color:#9d0006">enabled</span>: <span style="color:#af3a03">true</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#9d0006">allowedModels</span>:
+</span></span><span style="display:flex;"><span>      - <span style="color:#9d0006">provider</span>: deepseek-official
+</span></span><span style="display:flex;"><span>        <span style="color:#9d0006">model</span>: deepseek-flash
+</span></span><span style="display:flex;"><span>      <span style="color:#928374;font-style:italic"># ... 共 7 条</span>
+</span></span></code></pre></div><hr>
+<h2 id="4-保存失败根因排查本次主线">4. 保存失败根因排查（本次主线）</h2>
+<h3 id="41-现象">4.1 现象</h3>
+<p>GUI 逐项操作（7 个 checkbox 全勾选、开关 <code>aria-checked=true</code>、递归深度 1/并行上限 8）后点保存，页面提示「本部署没有接受这些值，已保留供你修改」（英文：<em>The deployment did not accept these values; they were left for you to correct.</em>，出自 <code>dsh-client-ui-settings-subagent/lib/client.js:21</code>）。</p>
+<p>前端逻辑（<code>SubagentModelSelectionCardController.save()</code>，client.js:480-740）：mutate 两个 set op → 保存后校验 <code>landed</code>（enabled 与 allowedModels 是否等于期望值）→ 失败显示 saveFailed。</p>
+<h3 id="42-api-复现拿到后端真实响应">4.2 API 复现（拿到后端真实响应）</h3>
+<p>直调 <code>/api/settings/mutate</code>（浏览器同源 fetch）逐步修正协议外壳后，后端返回：</p>
+<div class="highlight"><pre tabindex="0" style="color:#3c3836;background-color:#fbf1c7;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-json" data-lang="json"><span style="display:flex;"><span>{<span style="color:#9d0006">&#34;ok&#34;</span>:<span style="color:#af3a03">false</span>,<span style="color:#9d0006">&#34;error&#34;</span>:{<span style="color:#9d0006">&#34;code&#34;</span>:<span style="color:#79740e">&#34;settings/rejected&#34;</span>,
+</span></span><span style="display:flex;"><span>  <span style="color:#9d0006">&#34;message&#34;</span>:<span style="color:#79740e">&#34;dsh: profile reload requires the root Include entry&#34;</span>,
+</span></span><span style="display:flex;"><span>  <span style="color:#9d0006">&#34;details&#34;</span>:{<span style="color:#9d0006">&#34;ns&#34;</span>:<span style="color:#79740e">&#34;subagent-model-selection-settings&#34;</span>}}}
+</span></span></code></pre></div><blockquote>
+<p>协议外壳踩坑记录（避免后人重复）：<code>method</code> 必须在 JSON-RPC 外壳<strong>顶层</strong>（不是 payload 内）；payload 需包一层 <code>{args: {...}}</code>（&ldquo;Remote payload must contain exactly one plain-object args field&rdquo;）。</p>
+</blockquote>
+<h3 id="43-代码追因">4.3 代码追因</h3>
+<ul>
+<li><code>dsh-settings</code> 的 <code>mutate</code> → <code>write</code> → <code>configEditor.edit</code> → <code>reconcileProfilePatches(ownerContext.root, ...)</code></li>
+<li><code>dsh-app-boot</code> 的 <code>recompose</code>：<code>const entry = bootstrapIncludes.get(ctx); if (entry === void 0) throw ... &quot;profile reload requires the root Include entry&quot;</code></li>
+<li><code>bootstrapIncludes</code> 是<strong>模块级 WeakMap</strong>，key 为 boot 时的根 ctx；<code>mountRootInclude()</code> 在启动时（<code>boot()</code> 内）无条件挂载</li>
+<li>当前进程明明走 <code>boot()</code> 启动，却取不到 entry —— 说明<strong>调用 recompose 的 dsh-app-boot 模块实例 ≠ 执行 boot/mountRootInclude 的模块实例</strong></li>
+</ul>
+<h3 id="44-根因官方包双份实体实例">4.4 根因：官方包双份实体实例</h3>
+<ul>
+<li>官方设计（<code>initProfile</code> 模板）：profile 的 <code>package.json</code> 初始 <code>dependencies: {}</code>，<strong>官方包全部由 host（全局 dsh 安装）提供</strong>，profile 只装第三方插件</li>
+<li>实际：<code>~/.dsh/profiles/web/node_modules/@deepseek-ai/</code> 存在<strong>全套 308 个官方包实体拷贝</strong>（inode 独立、非软链），与 host 全局 <code>.../dsh/node_modules/@deepseek-ai/</code> 双份并存（包集合与版本逐一核对<strong>完全一致</strong>，均为 0.2.1-rc.5）</li>
+<li>后果：插件/服务加载官方包时优先命中 profile 本地拷贝 → 模块实例分裂 → <code>bootstrapIncludes</code> WeakMap 不共享 → settings 写入触发的 profile reload 找不到 root Include entry → 所有 settings/mutate 被拒</li>
+<li>起源：多次 <code>npm install --legacy-peer-deps</code> 装插件把官方包实体化装进 profile；本次修复前 GUI 保存从未成功过</li>
+</ul>
+<h3 id="45-修复与验证">4.5 修复与验证</h3>
+<div class="highlight"><pre tabindex="0" style="color:#3c3836;background-color:#fbf1c7;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span><span style="color:#b57614">cd</span> ~/.dsh/profiles/web/node_modules
+</span></span><span style="display:flex;"><span>mv @deepseek-ai @deepseek-ai.bak-1101c                      <span style="color:#928374;font-style:italic"># 备份实体拷贝（保留回退）</span>
+</span></span><span style="display:flex;"><span>ln -s /home/user/.npm-global/lib/node_modules/@deepseek-ai/dsh/node_modules/@deepseek-ai @deepseek-ai
+</span></span><span style="display:flex;"><span><span style="color:#928374;font-style:italic"># 重启 dsh web</span>
+</span></span></code></pre></div><ul>
+<li>重启后直调 mutate → <code>{&quot;ok&quot;:true, &quot;value&quot;: {&quot;enabled&quot;:true, &quot;allowedModels&quot;:[7 条], &quot;revision&quot;:1}}</code>，设置写入 <code>cordis.patch.yml</code></li>
+<li>备份目录 <code>@deepseek-ai.bak-1101c</code>（308 包）保留在 profile，可随时回退</li>
+</ul>
+<hr>
+<h2 id="5-实测验证结果浏览器会话--主模型自证">5. 实测验证结果（浏览器会话 · 主模型自证）</h2>
+<p>新会话中让主模型自证（非代码走查，权威）：</p>
+<p><strong>subagent 工具 schema（修复后，6 字段）：</strong></p>
+<table>
+	<thead>
+			<tr>
+					<th>字段</th>
+					<th>类型</th>
+					<th>必填</th>
+					<th>说明</th>
+			</tr>
+	</thead>
+	<tbody>
+			<tr>
+					<td>prompt</td>
+					<td>string</td>
+					<td>是</td>
+					<td>完整自包含任务描述（子代理看不到本会话上下文）</td>
+			</tr>
+			<tr>
+					<td>description</td>
+					<td>string</td>
+					<td>是</td>
+					<td>3–5 词简短任务描述</td>
+			</tr>
+			<tr>
+					<td>cwd</td>
+					<td>string</td>
+					<td>否</td>
+					<td>子代理初始工作目录</td>
+			</tr>
+			<tr>
+					<td><strong>provider</strong></td>
+					<td>string</td>
+					<td>否</td>
+					<td>LLM provider 路由；<strong>必须与 model 同时提供</strong></td>
+			</tr>
+			<tr>
+					<td><strong>model</strong></td>
+					<td>string</td>
+					<td>否</td>
+					<td>由 provider 解释的模型 id；<strong>必须与 provider 同时提供</strong></td>
+			</tr>
+			<tr>
+					<td><strong>reasoning_effort</strong></td>
+					<td>string</td>
+					<td>否</td>
+					<td>推理强度；省略时继承兼容配置或父级值</td>
+			</tr>
+	</tbody>
+</table>
+<p><strong>subagent_fork 工具 schema（不变，3 字段）：</strong> prompt / description / cwd —— 设计如此，fork 不换模型。</p>
+<p><strong>list_subagent_models（已注册，实测结果）：</strong></p>
+<table>
+	<thead>
+			<tr>
+					<th>Provider</th>
+					<th>模型 id</th>
+					<th>说明</th>
+			</tr>
+	</thead>
+	<tbody>
+			<tr>
+					<td>deepseek-official</td>
+					<td>deepseek-flash</td>
+					<td>DeepSeek-V4.1-Flash</td>
+			</tr>
+			<tr>
+					<td>deepseek-official</td>
+					<td>deepseek-v4-pro</td>
+					<td>DeepSeek-V4-Pro（更强 agentic 编码/推理，成本更高）</td>
+			</tr>
+			<tr>
+					<td>zai-coding-cn</td>
+					<td>glm-4.5-flash</td>
+					<td>GLM-4.5-Flash</td>
+			</tr>
+			<tr>
+					<td>zai-coding-cn</td>
+					<td>glm-5.3-flash</td>
+					<td>GLM-5.3-Flash</td>
+			</tr>
+			<tr>
+					<td>modelscope</td>
+					<td>deepseek-ai/DeepSeek-V4.1-Flash-1017</td>
+					<td>DeepSeek-V4.1-Flash</td>
+			</tr>
+			<tr>
+					<td>modelscope</td>
+					<td>Qwen/Qwen3.5-27B</td>
+					<td>Qwen3.5-27B</td>
+			</tr>
+			<tr>
+					<td>modelscope</td>
+					<td>ZhipuAI/GLM-5.2</td>
+					<td>GLM-5.2</td>
+			</tr>
+	</tbody>
+</table>
+<blockquote>
+<p>主模型备注：目录中的模型仅作参考，适配器可接受未列出的模型 id。</p>
+</blockquote>
+<hr>
+<h2 id="6-稳定性与效果评估">6. 稳定性与效果评估</h2>
+<h3 id="61-稳定性">6.1 稳定性</h3>
+<table>
+	<thead>
+			<tr>
+					<th>维度</th>
+					<th>评估</th>
+					<th>依据</th>
+			</tr>
+	</thead>
+	<tbody>
+			<tr>
+					<td>功能可靠性</td>
+					<td><strong>高</strong>。内核级原生能力，schema 扩展由工具包显式控制</td>
+					<td>代码：<code>modelSelectionSettings</code> 分支 + <code>list_subagent_models</code> 注册</td>
+			</tr>
+			<tr>
+					<td>持久化</td>
+					<td><strong>可靠</strong>。设置写入 profile patch 文档，重启后保留</td>
+					<td>实测：mutate revision 0→1、<code>cordis.patch.yml</code> 落盘、重启后新会话生效</td>
+			</tr>
+			<tr>
+					<td>并发/冲突保护</td>
+					<td><strong>有</strong>。revision 冲突检测（前端 conflicted 态）+ 设置文档原子写</td>
+					<td><code>dsh-settings</code> write 的 <code>expectedRevision</code> 校验、<code>writeFileAtomic</code></td>
+			</tr>
+			<tr>
+					<td>本次故障归因</td>
+					<td>部署结构问题（官方包双份），<strong>非功能缺陷</strong>；修复后稳定</td>
+					<td>4.4 节根因链</td>
+			</tr>
+			<tr>
+					<td>已知风险</td>
+					<td>① 未来在 profile 内 <code>npm install</code> 可能再次实体化/破坏官方包软链；② 若 profile 官方包版本与 host 不一致，软链统一为 host 版本</td>
+					<td>4.5 节修复方案</td>
+			</tr>
+	</tbody>
+</table>
+<h3 id="62-效果">6.2 效果</h3>
+<ul>
+<li><strong>能力达成</strong>：subagent 工具现在可指定 <code>provider/model/reasoning_effort</code>，主模型可把子任务路由给智谱 GLM、魔塔 Qwen 等非 DeepSeek 模型，实现&quot;默认 ds、可换其他模型&quot;的目标</li>
+<li><strong>路由可见</strong>：<code>list_subagent_models</code> 提供枚举能力，便于编排</li>
+<li><strong>约束明确</strong>：fork 型子代理不可换模型（KV Cache 复用设计），需要换模型时用 spawn 型</li>
+<li><strong>独立并行路径</strong>：自研 <code>dsh-model-call</code>（call_model 工具）可直接调 zhipu/modelscope，与 subagent 路由设置互不依赖——&ldquo;只想换个模型问问&quot;已有更轻量路径</li>
+</ul>
+<h3 id="63-使用注意事项">6.3 使用注意事项</h3>
+<ol>
+<li><strong>新会话才生效</strong>：修改设置后，已存在的会话不生效，需新建会话</li>
+<li><strong>provider/model 必须成对</strong>：只传其一会校验失败</li>
+<li><strong>白名单约束</strong>：enabled 时 allowedModels 至少 1 条；未授权的 provider/model 不可选</li>
+<li><strong>npm install 风险</strong>：装新插件用 <code>npm install</code> 前注意官方包软链可能被重装实体化（若发生，重复 4.5 节修复：备份→软链→重启）</li>
+<li><strong>备份</strong>：<code>@deepseek-ai.bak-1101c</code> 为修复前实体拷贝备份，确认稳定后可清理</li>
+</ol>
+<hr>
+<h2 id="7-使用示例">7. 使用示例</h2>
+<div class="highlight"><pre tabindex="0" style="color:#3c3836;background-color:#fbf1c7;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-text" data-lang="text"><span style="display:flex;"><span>请用 subagent 工具，provider 为 zai-coding-cn、model 为 glm-5.3-flash，
+</span></span><span style="display:flex;"><span>reasoning_effort 为 high，总结 /home/user/Doubao/chats/lib-test.md 的要点
+</span></span></code></pre></div><p>（模型 id 以 list_subagent_models 返回为准；provider/model 必须成对出现）</p>
+<hr>
+<h2 id="8-相关文件与存档">8. 相关文件与存档</h2>
+<ul>
+<li>本报告：<code>/home/user/Doubao/chats/38447447855447810/dsh-subagent模型选择实测报告.md</code></li>
+<li>配置：<code>~/.dsh/profiles/web/cordis.patch.yml</code>（含新增 <code>subagent-model-selection-settings</code> 条目，备份 .bak-1031/.bak-1031b）</li>
+<li>修复备份：<code>~/.dsh/profiles/web/node_modules/@deepseek-ai.bak-1101c</code>（308 个官方包实体拷贝）</li>
+<li>内核代码：<code>dsh-tool-subagent/lib/index.js</code>、<code>lib/model-selection-settings.js</code>、<code>dsh-app-boot/lib/index.js</code>（bootstrapIncludes/mountRootInclude/recompose）</li>
+<li>关联存档：<code>dsh-RAG插件实测存档</code>（云盘文件夹 XzOIfZ1S8lqf75dOAkscH2EsnIf，5 插件对比报告+安装包）</li>
+</ul>
+<hr>
+<p><em>报告完毕。如需复测：重启 dsh → 新会话让主模型自证 subagent schema 与 list_subagent_models。</em></p>
+
+  </div>
+
+  <nav class="post-nav">
+    
+      <a class="prev" href="/posts/%E6%B5%8F%E8%A7%88%E5%99%A8mcp%E5%AE%9E%E6%B5%8B%E6%8A%A5%E5%91%8A/">← 浏览器 MCP Server 实测报告</a>
+    
+    
+      <a class="next" href="/posts/dsh%E7%9F%A5%E8%AF%86%E5%BA%93%E6%8F%92%E4%BB%B6%E5%AE%9E%E6%B5%8B%E5%AF%B9%E6%AF%94%E6%8A%A5%E5%91%8A/">dsh 知识库/向量记忆插件实测对比报告 →</a>
+    
+  </nav>
+</article>
+
+  </main><footer>
+  <span>© 2026 zjx 的手记 · 由 Hugo 生成</span>
+  <span>
+    <a href="zhoujiaxuan0729" target="_blank" rel="noopener">GitHub</a>
+    <a href="mailto:zhoujiaxuan45@outlook.com">邮件</a>
+  </span>
+</footer>
+</div><script>
+  
+  (function () {
+    var btn = document.getElementById('themeToggle');
+    if (!btn) return;
+    btn.addEventListener('click', function () {
+      var isDark = document.documentElement.classList.toggle('dark');
+      try { localStorage.setItem('theme', isDark ? 'dark' : 'light'); } catch (e) {}
+    });
+  })();
+</script>
+</body>
+</html>

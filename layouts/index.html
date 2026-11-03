@@ -1,0 +1,41 @@
+{{ define "main" }}
+
+  {{ $featured := first 1 (where .Site.RegularPages "Params.featured" true) }}
+  {{ $rest := where (where .Site.RegularPages "Section" "posts") "Params.featured" "!=" true | first 6 }}
+
+  <div class="section-label">最近更新</div>
+
+  {{ range $featured }}
+  <article class="featured">
+    <a href="{{ .RelPermalink }}" class="card-link">
+      <span class="kicker">置顶</span>
+      <h2>{{ .Title }}</h2>
+      <p class="excerpt">{{ .Description | default (.Summary | plainify | truncate 120) }}</p>
+      <div class="meta">
+        <span>{{ .Date.Format "2006-01-02" }}</span>
+        {{ if .ReadingTime }}<span>约 {{ .ReadingTime }} 分钟读完</span>{{ end }}
+        {{ with .Params.tags }}<span>{{ delimit . " · " }}</span>{{ end }}
+      </div>
+    </a>
+  </article>
+  {{ end }}
+
+  <div class="section-label">全部文章</div>
+
+  <div class="grid">
+    {{ range $rest }}
+    <article class="card">
+      <a href="{{ .RelPermalink }}" class="card-link">
+        {{ with .Params.tags }}<span class="tag">{{ index . 0 }}</span>{{ end }}
+        <h3>{{ .Title }}</h3>
+        <p class="excerpt">{{ .Description | default (.Summary | plainify | truncate 80) }}</p>
+        <div class="meta">
+          <span>{{ .Date.Format "2006-01-02" }}</span>
+          {{ with .Params.tags }}<span>{{ delimit . " · " }}</span>{{ end }}
+        </div>
+      </a>
+    </article>
+    {{ end }}
+  </div>
+
+{{ end }}

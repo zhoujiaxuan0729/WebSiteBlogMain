@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+	<channel>
+		<title>内网穿透 on 可能是一个凑数的blog?(但显然不是)</title>
+		<link>http://192.168.3.3:4096/tags/%E5%86%85%E7%BD%91%E7%A9%BF%E9%80%8F/</link>
+		<description>Recent content in 内网穿透 on 可能是一个凑数的blog?(但显然不是)</description>
+		<generator>Hugo</generator>
+		<language>zh-cn</language>
+		
+		
+		
+		
+			<lastBuildDate>Thu, 22 Oct 2026 00:00:00 +0000</lastBuildDate>
+		
+			<atom:link href="http://192.168.3.3:4096/tags/%E5%86%85%E7%BD%91%E7%A9%BF%E9%80%8F/index.xml" rel="self" type="application/rss+xml" />
+			<item>
+				<title>蒲公英组网：把手机变成家里的内网节点</title>
+				<link>http://192.168.3.3:4096/posts/pgyer-tunnel/</link>
+				<pubDate>Thu, 22 Oct 2026 00:00:00 +0000</pubDate>
+				<guid>http://192.168.3.3:4096/posts/pgyer-tunnel/</guid>
+				<description>&lt;h2 id=&#34;为什么用蒲公英&#34;&gt;为什么用蒲公英&lt;/h2&gt;&#xA;&lt;p&gt;家里宽带给的是大内网 IP，没法从外面直接访问。frp 需要一台有公网的 VPS，暂时不想多花钱。&lt;/p&gt;&#xA;&lt;h2 id=&#34;配置&#34;&gt;配置&lt;/h2&gt;&#xA;&lt;ol&gt;&#xA;&lt;li&gt;手机装蒲公英 Android 客户端，登录账号。&lt;/li&gt;&#xA;&lt;li&gt;家里软路由也装一个蒲公英客户端，同账号。&lt;/li&gt;&#xA;&lt;li&gt;两台设备自动分到同一个虚拟网段。&lt;/li&gt;&#xA;&lt;li&gt;手机上 &lt;code&gt;hugo server --bind 0.0.0.0&lt;/code&gt;，外面通过 &lt;code&gt;http://手机虚拟IP:1313&lt;/code&gt; 访问。&lt;/li&gt;&#xA;&lt;/ol&gt;&#xA;&lt;h2 id=&#34;局限&#34;&gt;局限&lt;/h2&gt;&#xA;&lt;ul&gt;&#xA;&lt;li&gt;只有装了蒲公英的设备能访问，不能公开分享。&lt;/li&gt;&#xA;&lt;li&gt;延迟比公网直连高一些，但自用够了。&lt;/li&gt;&#xA;&lt;/ul&gt;</description>
+			</item>
+	</channel>
+</rss>

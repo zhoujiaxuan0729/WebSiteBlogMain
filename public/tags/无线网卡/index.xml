@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+	<channel>
+		<title>无线网卡 on 可能是一个凑数的blog?(但显然不是)</title>
+		<link>http://192.168.3.3:4096/tags/%E6%97%A0%E7%BA%BF%E7%BD%91%E5%8D%A1/</link>
+		<description>Recent content in 无线网卡 on 可能是一个凑数的blog?(但显然不是)</description>
+		<generator>Hugo</generator>
+		<language>zh-cn</language>
+		
+		
+		
+		
+			<lastBuildDate>Sun, 18 Oct 2026 00:00:00 +0000</lastBuildDate>
+		
+			<atom:link href="http://192.168.3.3:4096/tags/%E6%97%A0%E7%BA%BF%E7%BD%91%E5%8D%A1/index.xml" rel="self" type="application/rss+xml" />
+			<item>
+				<title>AX200 在 Linux 下的那些小毛病</title>
+				<link>http://192.168.3.3:4096/posts/ax200-linux-issues/</link>
+				<pubDate>Sun, 18 Oct 2026 00:00:00 +0000</pubDate>
+				<guid>http://192.168.3.3:4096/posts/ax200-linux-issues/</guid>
+				<description>&lt;h2 id=&#34;问题一随机掉线&#34;&gt;问题一：随机掉线&lt;/h2&gt;&#xA;&lt;p&gt;内核日志里看到 &lt;code&gt;iwlwifi&lt;/code&gt; 报错。解法：升级到最新稳定内核，固件包 &lt;code&gt;linux-firmware&lt;/code&gt; 更新到最新。&lt;/p&gt;&#xA;&lt;h2 id=&#34;问题二蓝牙和-wi-fi-抢天线&#34;&gt;问题二：蓝牙和 Wi-Fi 抢天线&lt;/h2&gt;&#xA;&lt;p&gt;AX200 是 Wi-Fi + 蓝牙二合一模块，共用天线。蓝牙开着的时候 Wi-Fi 速率掉一半。接外接天线能缓解。&lt;/p&gt;&#xA;&lt;h2 id=&#34;问题三5g-信号弱&#34;&gt;问题三：5G 信号弱&lt;/h2&gt;&#xA;&lt;p&gt;确认路由 5G 信道没设成 DFS 雷达信道，部分地区 AX200 对 DFS 支持不好。&lt;/p&gt;&#xA;&lt;h2 id=&#34;结论&#34;&gt;结论&lt;/h2&gt;&#xA;&lt;p&gt;整体值这个价，折腾完之后稳定。&lt;/p&gt;</description>
+			</item>
+	</channel>
+</rss>

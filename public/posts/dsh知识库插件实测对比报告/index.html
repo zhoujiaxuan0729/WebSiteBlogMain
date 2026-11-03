@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="zh-CN"><head><script src="/livereload.js?mindelay=10&amp;v=2&amp;port=4096&amp;path=livereload" data-no-instant defer></script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>dsh 知识库/向量记忆插件实测对比报告 · 可能是一个凑数的blog?(但显然不是)</title>
+  <meta name="description" content="最终保留启用:dsh-library &#43; dsh-knowledge &#43; dsh-engram 三套并存,互不冲突。">
+  <script>
+    
+    (function () {
+      try {
+        var saved = localStorage.getItem('theme');
+        if (saved === 'dark' || (!saved && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+          document.documentElement.classList.add('dark');
+        }
+      } catch (e) {}
+    })();
+  </script>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='18' fill='%23B45309'/%3E%3Ctext x='50' y='68' font-size='52' text-anchor='middle' fill='%23FFFBEF' font-family='serif' font-weight='bold'%3Ez%3C/text%3E%3C/svg%3E">
+  <link rel="stylesheet" href="/css/main.css">
+  </head>
+<body>
+<div class="wrap"><header class="site">
+  <div class="brand">
+    <a href="/">可能是一个凑数的blog?(但显然不是)<span class="dot">.</span></a>
+  </div>
+  <p class="tagline">sha包原话:一台手机，几行代码，一些在 Termux 和 AidLux 里折腾出来的零碎记录。关于编程、网络，和一切让我着迷的小实验。
+你说这装不装，但我又不知道该写点啥在这。</p>
+  <nav class="top">
+    <a href="/">首页</a>
+    
+      <a href="/posts/">归档</a>
+    
+      <a href="/about/">关于</a>
+    
+      <a href="/index.xml">RSS</a>
+    
+    <button class="theme-toggle" id="themeToggle" aria-label="切换夜间模式" title="切换夜间模式">
+      <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+      </svg>
+      <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="12" r="5"/>
+        <line x1="12" y1="1" x2="12" y2="3"/>
+        <line x1="12" y1="21" x2="12" y2="23"/>
+        <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/>
+        <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
+        <line x1="1" y1="12" x2="3" y2="12"/>
+        <line x1="21" y1="12" x2="23" y2="12"/>
+        <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/>
+        <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
+      </svg>
+    </button>
+  </nav>
+</header>
+<main>
+<article class="post">
+  <header class="post-header">
+    <h1>dsh 知识库/向量记忆插件实测对比报告</h1>
+    <div class="meta">
+      <span>2026-11-01</span>
+      <span>约 3 分钟读完</span>
+      
+        <span>
+          <a class="tag-inline" href="/tags/%E5%AF%B9%E8%AF%9D%E6%8A%A5%E5%91%8A/">对话报告</a>
+        </span>
+      
+    </div>
+  </header>
+
+  <div class="post-body">
+    <h1 id="dsh-知识库向量记忆插件实测对比报告">dsh 知识库/向量记忆插件实测对比报告</h1>
+<blockquote>
+<p>实测环境:云电脑 dsh 0.2.1-rc.5(profile: web),2026-11-01
+目的:dsh 能否实现 open-webui 式向量库/知识库(RAG)能力?npm 生态 5 个候选逐一安装实测。</p>
+</blockquote>
+<h2 id="一结论速览">一、结论速览</h2>
+<table>
+	<thead>
+			<tr>
+					<th>插件</th>
+					<th>版本</th>
+					<th>兼容性</th>
+					<th>可用性(实测)</th>
+					<th>稳定性</th>
+					<th>易用性</th>
+			</tr>
+	</thead>
+	<tbody>
+			<tr>
+					<td><strong>dsh-library</strong></td>
+					<td>0.2.25</td>
+					<td>✅ 兼容</td>
+					<td>✅ library_add 导入 + library_search 检索实测通过</td>
+					<td>稳定</td>
+					<td>高(纯对话操作)</td>
+			</tr>
+			<tr>
+					<td><strong>dsh-knowledge</strong></td>
+					<td>0.5.2</td>
+					<td>✅ 兼容</td>
+					<td>✅ knowledge_list_bases 实测通过,工具族全注册</td>
+					<td>稳定</td>
+					<td>高(带浏览器管理面板)</td>
+			</tr>
+			<tr>
+					<td><strong>dsh-engram</strong></td>
+					<td>0.11.3</td>
+					<td>✅ 兼容</td>
+					<td>✅ 23 个 engram_* 工具全注册</td>
+					<td>稳定(embedding 需网络)</td>
+					<td>高(记忆宫殿面板)</td>
+			</tr>
+			<tr>
+					<td>dsh-memory-search</td>
+					<td>0.1.1</td>
+					<td>❌ 不兼容</td>
+					<td>硬锁 dsh-tools 0.1.0-rc.6,与内核 0.2.1-rc.5 冲突,曾导致整个 dsh 启动崩溃</td>
+					<td>已放弃</td>
+					<td>-</td>
+			</tr>
+			<tr>
+					<td>dsh-advanced-memory</td>
+					<td>0.9.17</td>
+					<td>❌ 不兼容</td>
+					<td>依赖 dsh-settings 的 <code>settingsNamespace</code> 导出,内核 API 不匹配</td>
+					<td>已放弃</td>
+					<td>-</td>
+			</tr>
+	</tbody>
+</table>
+<p><strong>最终保留启用:dsh-library + dsh-knowledge + dsh-engram 三套并存,互不冲突。</strong></p>
+<h2 id="二三套可用插件能力明细实测">二、三套可用插件能力明细(实测)</h2>
+<h3 id="1-dsh-library本地文档知识库最轻量">1. dsh-library(本地文档知识库,最轻量)</h3>
+<ul>
+<li>依赖:仅 zod(安装秒级)</li>
+<li>工具(6 个,前缀 <code>library_</code>):library_add / library_search / library_list / library_remove / library_diagnose / library_cite_check</li>
+<li>实测:导入 697 字节 md → 自动分块(900 字符/块,120 重叠)→ 混合检索(0.6 语义 + 0.4 关键词)命中 → 结果注入对话带 [n] 来源标记 → 模型正确引用回答</li>
+<li>embedding:内置确定性 hash embedder(dims 256,零下载零依赖);可配外部 embedder 子进程(OpenAI 兼容/Ollama/本地 onnx)</li>
+<li>特点:检索质量与 open-webui 接近(lost-in-the-middle 规避、多样性重排、相关性过滤),无管理界面</li>
+</ul>
+<h3 id="2-dsh-knowledgecherry-studio-风格知识库功能最全">2. dsh-knowledge(Cherry Studio 风格知识库,功能最全)</h3>
+<ul>
+<li>依赖:重(mupdf/onnxruntime/tesseract/ppu-ocr/transformers 等,安装 130 包约 2 分钟)</li>
+<li>结构:三层挂载(service + tool + UI),官方模板要求 3 条 insert</li>
+<li>工具(前缀 <code>knowledge_</code>,实测已注册):knowledge_create_base / knowledge_add_document / knowledge_list_bases / knowledge_search(BM25+向量混合,跨 base)/ knowledge_read_document / knowledge_get_document / knowledge_read_evidence 等</li>
+<li>面板:侧边栏出现&quot;知识库&quot;入口(浏览器管理界面,最接近 open-webui RAG 体验)</li>
+<li>embedding 支持:OpenAI 兼容 / Ollama / 本地 onnx / 词汇兜底(当前配置 <code>embeddingProvider: none</code>,即词汇检索,零外部依赖可先跑通;要语义检索配置 embeddingBaseUrl + model + key 即可)</li>
+<li>多格式:PDF / Word / 网页 / OCR(图片)全部支持</li>
+</ul>
+<h3 id="3-dsh-engram跨会话长期记忆记忆宫殿">3. dsh-engram(跨会话长期记忆&quot;记忆宫殿&quot;)</h3>
+<ul>
+<li>依赖:@huggingface/transformers(安装中等)</li>
+<li>工具(23 个,前缀 <code>engram_</code>):engram_save / engram_search / engram_update / engram_forget / engram_examine / engram_neighbors / engram_timeline / engram_episode_timeline / engram_stats / engram_tour / engram_assess / engram_report / engram_review / engram_review_queue / engram_facts / engram_distill / engram_reflect / engram_export / engram_import / engram_audit_forgotten / engram_ingest_history / engram_profile_edit / engram_language_guide</li>
+<li>定位:不是文档知识库,是长期记忆(SM-2 间隔重复、证据闸门、来源审计、画像注入),与 knowledge/library 互补</li>
+<li>注意:本地 embedding 模型首次使用需联网下载,<strong>云电脑代理会超时(ETIMEDOUT)导致降级为关键词检索</strong>;建议配置 HF 镜像或代理白名单后再启用语义检索</li>
+</ul>
+<h2 id="三配置流程可复现">三、配置流程(可复现)</h2>
+<div class="highlight"><pre tabindex="0" style="color:#3c3836;background-color:#fbf1c7;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span><span style="color:#928374;font-style:italic"># 1. 安装(全部用 --legacy-peer-deps,生态 peer 冲突是常态)</span>
+</span></span><span style="display:flex;"><span><span style="color:#b57614">cd</span> ~/.dsh/profiles/web
+</span></span><span style="display:flex;"><span>npm install --legacy-peer-deps dsh-library dsh-knowledge @kenz1117/dsh-engram
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#928374;font-style:italic"># 2. 自研插件防修剪:写进 dependencies 用 file: 引用,或放 ~/.dsh/profiles/node_modules/ 兜底目录</span>
+</span></span><span style="display:flex;"><span><span style="color:#928374;font-style:italic">#    (npm install 会清理不在 dependencies 的孤儿包,曾误删 dsh-model-call)</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#928374;font-style:italic"># 3. cordis.patch.yml 的 insert 段(实测有效配置)</span>
+</span></span></code></pre></div><div class="highlight"><pre tabindex="0" style="color:#3c3836;background-color:#fbf1c7;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-yaml" data-lang="yaml"><span style="display:flex;"><span>- <span style="color:#9d0006">insert</span>:
+</span></span><span style="display:flex;"><span>    - <span style="color:#9d0006">id</span>: dsh-model-call
+</span></span><span style="display:flex;"><span>      <span style="color:#9d0006">name</span>: dsh-model-call
+</span></span><span style="display:flex;"><span>      <span style="color:#9d0006">config</span>: {}
+</span></span><span style="display:flex;"><span>    - <span style="color:#9d0006">id</span>: dsh-library
+</span></span><span style="display:flex;"><span>      <span style="color:#9d0006">name</span>: dsh-library
+</span></span><span style="display:flex;"><span>      <span style="color:#9d0006">config</span>:
+</span></span><span style="display:flex;"><span>        <span style="color:#9d0006">chunkSize</span>: <span style="color:#8f3f71">900</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#9d0006">chunkOverlap</span>: <span style="color:#8f3f71">120</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#9d0006">maxFileBytes</span>: <span style="color:#8f3f71">5242880</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#9d0006">embedding</span>: { <span style="color:#9d0006">dims</span>: <span style="color:#9d0006">256, command</span>: <span style="color:#9d0006">&#39;&#39;, timeoutMs</span>: <span style="color:#9d0006">30000, graceMs</span>: <span style="color:#9d0006">1000, maxOutputBytes</span>: <span style="color:#9d0006">1048576, maxBatchItems</span>: <span style="color:#8f3f71">64</span> }
+</span></span><span style="display:flex;"><span>        <span style="color:#9d0006">search</span>: { <span style="color:#9d0006">topK</span>: <span style="color:#9d0006">8, hybridWeight</span>: <span style="color:#9d0006">0.6, minRelevance</span>: <span style="color:#9d0006">0.15, diversityLambda</span>: <span style="color:#9d0006">0.5, lostMiddleHead</span>: <span style="color:#9d0006">1, lostMiddleTail</span>: <span style="color:#9d0006">1, maxResultChars</span>: <span style="color:#8f3f71">16000</span> }
+</span></span><span style="display:flex;"><span>        <span style="color:#9d0006">injection</span>: { <span style="color:#9d0006">enabled</span>: <span style="color:#9d0006">true, maxChars</span>: <span style="color:#8f3f71">12000</span> }
+</span></span><span style="display:flex;"><span>        <span style="color:#9d0006">citation</span>: { <span style="color:#9d0006">windowChars</span>: <span style="color:#8f3f71">150</span> }
+</span></span><span style="display:flex;"><span>    - <span style="color:#9d0006">id</span>: knowledge
+</span></span><span style="display:flex;"><span>      <span style="color:#9d0006">name</span>: dsh-knowledge/knowledge
+</span></span><span style="display:flex;"><span>      <span style="color:#9d0006">config</span>:
+</span></span><span style="display:flex;"><span>        <span style="color:#9d0006">embeddingProvider</span>: none
+</span></span><span style="display:flex;"><span>        <span style="color:#9d0006">embeddingBaseUrl</span>: <span style="color:#79740e">&#39;&#39;</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#9d0006">embeddingModel</span>: <span style="color:#79740e">&#39;&#39;</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#9d0006">embeddingApiKey</span>: <span style="color:#79740e">&#39;&#39;</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#9d0006">chunkSize</span>: <span style="color:#8f3f71">800</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#9d0006">chunkOverlap</span>: <span style="color:#8f3f71">100</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#9d0006">topK</span>: <span style="color:#8f3f71">4</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#9d0006">localModelCacheDir</span>: <span style="color:#79740e">&#39;&#39;</span>
+</span></span><span style="display:flex;"><span>    - <span style="color:#9d0006">id</span>: tool-knowledge
+</span></span><span style="display:flex;"><span>      <span style="color:#9d0006">name</span>: dsh-knowledge/tool-knowledge
+</span></span><span style="display:flex;"><span>    - <span style="color:#9d0006">id</span>: ui-knowledge
+</span></span><span style="display:flex;"><span>      <span style="color:#9d0006">name</span>: dsh-knowledge
+</span></span><span style="display:flex;"><span>    - <span style="color:#9d0006">id</span>: dsh-engram
+</span></span><span style="display:flex;"><span>      <span style="color:#9d0006">name</span>: <span style="color:#79740e">&#39;@kenz1117/dsh-engram&#39;</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#9d0006">config</span>:
+</span></span><span style="display:flex;"><span>        <span style="color:#9d0006">ingest</span>: <span style="color:#79740e">&#39;light&#39;</span>
+</span></span></code></pre></div><div class="highlight"><pre tabindex="0" style="color:#3c3836;background-color:#fbf1c7;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span><span style="color:#928374;font-style:italic"># 4. 重启(杀 3080 后 setsid 启动,等 40s,以日志 token 访问)</span>
+</span></span><span style="display:flex;"><span><span style="color:#928374;font-style:italic"># 5. 对话中验证:让模型调用 library_add / knowledge_list_bases / engram_search 即可</span>
+</span></span></code></pre></div><h2 id="四踩坑记录重要">四、踩坑记录(重要)</h2>
+<table>
+	<thead>
+			<tr>
+					<th>坑</th>
+					<th>现象</th>
+					<th>解决</th>
+			</tr>
+	</thead>
+	<tbody>
+			<tr>
+					<td>peer 依赖冲突</td>
+					<td>npm install 报 ERESOLVE</td>
+					<td><code>--legacy-peer-deps</code>(生态普遍问题)</td>
+			</tr>
+			<tr>
+					<td><strong>npm 修剪孤儿包</strong></td>
+					<td>自研 dsh-model-call 被 <code>npm install</code> 删除,报 ERR_MODULE_NOT_FOUND</td>
+					<td>写进 package.json dependencies(file: 引用)或放 <code>~/.dsh/profiles/node_modules/</code> 兜底目录</td>
+			</tr>
+			<tr>
+					<td>内核包被插件依赖替换</td>
+					<td>dsh-memory-search 硬锁 dsh-tools 0.1.0-rc.6,替换 0.2.1-rc.5 后 dsh 整个启动失败(SyntaxError: CallId 导出缺失)</td>
+					<td>放弃该插件;用全局 dsh 配套内核包还原 <code>@deepseek-ai/*</code></td>
+			</tr>
+			<tr>
+					<td>dsh-knowledge 只挂 service 层不生效</td>
+					<td>只写 1 条 insert,knowledge_* 工具不出现</td>
+					<td>官方模板需 <strong>3 条 insert</strong>(knowledge + tool-knowledge + ui-knowledge)</td>
+			</tr>
+			<tr>
+					<td>dsh 新版工具注册要求</td>
+					<td><code>tool must declare output { schema, render }</code></td>
+					<td>自研插件 register 时补 <code>output</code> 字段</td>
+			</tr>
+			<tr>
+					<td>engram embedding 下载超时</td>
+					<td>ETIMEDOUT(云电脑代理),降级关键词检索</td>
+					<td>配 HF 镜像 / 代理白名单;插件本身可用</td>
+			</tr>
+	</tbody>
+</table>
+<h2 id="五与-open-webui-的对照">五、与 open-webui 的对照</h2>
+<table>
+	<thead>
+			<tr>
+					<th>能力</th>
+					<th>open-webui RAG</th>
+					<th>dsh-knowledge</th>
+					<th>dsh-library</th>
+			</tr>
+	</thead>
+	<tbody>
+			<tr>
+					<td>多格式文档(PDF/Word/OCR)</td>
+					<td>✅</td>
+					<td>✅</td>
+					<td>md/txt</td>
+			</tr>
+			<tr>
+					<td>可视化知识库管理</td>
+					<td>✅ 完整界面</td>
+					<td>✅ 浏览器面板</td>
+					<td>❌ 纯对话</td>
+			</tr>
+			<tr>
+					<td>语义向量检索</td>
+					<td>✅</td>
+					<td>✅(需配 embedding)</td>
+					<td>✅(内置 hash,可配外部)</td>
+			</tr>
+			<tr>
+					<td>混合检索/重排</td>
+					<td>✅</td>
+					<td>✅ BM25+向量</td>
+					<td>✅ hybrid+diversity</td>
+			</tr>
+			<tr>
+					<td>引用溯源</td>
+					<td>✅</td>
+					<td>✅ evidence</td>
+					<td>✅ cite_check</td>
+			</tr>
+			<tr>
+					<td>本地轻量部署</td>
+					<td>❌ 重</td>
+					<td>中(依赖重)</td>
+					<td>✅ 极轻</td>
+			</tr>
+			<tr>
+					<td>荣耀20/AidLux 可行</td>
+					<td>❌ 8G 吃力</td>
+					<td>⚠️ onnx 原生模块待验</td>
+					<td>✅ 可行</td>
+			</tr>
+	</tbody>
+</table>
+<h2 id="六当前启用状态">六、当前启用状态</h2>
+<ul>
+<li>dsh 启动日志无插件级报错(仅 onebot 需配置 accessToken 属既有问题、dream-skin/better-sidebar 为正常 pending)</li>
+<li>三套知识库插件 + dsh-model-call(自研多模型调用)并存可用</li>
+</ul>
+
+  </div>
+
+  <nav class="post-nav">
+    
+      <a class="prev" href="/posts/dsh-subagent%E6%A8%A1%E5%9E%8B%E9%80%89%E6%8B%A9%E5%AE%9E%E6%B5%8B%E6%8A%A5%E5%91%8A/">← dsh 子智能体模型选择：机制、根因排查与实测报告</a>
+    
+    
+      <a class="next" href="/posts/dsh%E6%8F%92%E4%BB%B6%E7%94%9F%E6%80%81%E8%B4%A8%E9%87%8F%E4%B8%8E%E5%85%BC%E5%AE%B9%E6%80%A7%E8%B0%83%E7%A0%94%E6%8A%A5%E5%91%8A/">DSH（DeepSeek Harness）插件生态质量与兼容性调研报告 →</a>
+    
+  </nav>
+</article>
+
+  </main><footer>
+  <span>© 2026 zjx 的手记 · 由 Hugo 生成</span>
+  <span>
+    <a href="zhoujiaxuan0729" target="_blank" rel="noopener">GitHub</a>
+    <a href="mailto:zhoujiaxuan45@outlook.com">邮件</a>
+  </span>
+</footer>
+</div><script>
+  
+  (function () {
+    var btn = document.getElementById('themeToggle');
+    if (!btn) return;
+    btn.addEventListener('click', function () {
+      var isDark = document.documentElement.classList.toggle('dark');
+      try { localStorage.setItem('theme', isDark ? 'dark' : 'light'); } catch (e) {}
+    });
+  })();
+</script>
+</body>
+</html>

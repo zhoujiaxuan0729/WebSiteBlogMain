@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="zh-CN"><head><script src="/livereload.js?mindelay=10&amp;v=2&amp;port=4096&amp;path=livereload" data-no-instant defer></script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>多方案实测:DeepSeek 自主调用其他模型(2026-10-31) · 可能是一个凑数的blog?(但显然不是)</title>
+  <meta name="description" content="- 配置流程:插件文件放 ~/.dsh/profiles/web/nodemodules/dsh-model-call/,在 cordis.patch.yml insert 挂载;key 存 ~/.d">
+  <script>
+    
+    (function () {
+      try {
+        var saved = localStorage.getItem('theme');
+        if (saved === 'dark' || (!saved && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+          document.documentElement.classList.add('dark');
+        }
+      } catch (e) {}
+    })();
+  </script>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='18' fill='%23B45309'/%3E%3Ctext x='50' y='68' font-size='52' text-anchor='middle' fill='%23FFFBEF' font-family='serif' font-weight='bold'%3Ez%3C/text%3E%3C/svg%3E">
+  <link rel="stylesheet" href="/css/main.css">
+  </head>
+<body>
+<div class="wrap"><header class="site">
+  <div class="brand">
+    <a href="/">可能是一个凑数的blog?(但显然不是)<span class="dot">.</span></a>
+  </div>
+  <p class="tagline">sha包原话:一台手机，几行代码，一些在 Termux 和 AidLux 里折腾出来的零碎记录。关于编程、网络，和一切让我着迷的小实验。
+你说这装不装，但我又不知道该写点啥在这。</p>
+  <nav class="top">
+    <a href="/">首页</a>
+    
+      <a href="/posts/">归档</a>
+    
+      <a href="/about/">关于</a>
+    
+      <a href="/index.xml">RSS</a>
+    
+    <button class="theme-toggle" id="themeToggle" aria-label="切换夜间模式" title="切换夜间模式">
+      <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+      </svg>
+      <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="12" r="5"/>
+        <line x1="12" y1="1" x2="12" y2="3"/>
+        <line x1="12" y1="21" x2="12" y2="23"/>
+        <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/>
+        <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
+        <line x1="1" y1="12" x2="3" y2="12"/>
+        <line x1="21" y1="12" x2="23" y2="12"/>
+        <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/>
+        <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
+      </svg>
+    </button>
+  </nav>
+</header>
+<main>
+<article class="post">
+  <header class="post-header">
+    <h1>多方案实测:DeepSeek 自主调用其他模型(2026-10-31)</h1>
+    <div class="meta">
+      <span>2026-10-31</span>
+      <span>约 3 分钟读完</span>
+      
+        <span>
+          <a class="tag-inline" href="/tags/%E5%AF%B9%E8%AF%9D%E6%8A%A5%E5%91%8A/">对话报告</a>
+        </span>
+      
+    </div>
+  </header>
+
+  <div class="post-body">
+    <h1 id="多方案实测deepseek-自主调用其他模型2026-10-31">多方案实测:DeepSeek 自主调用其他模型(2026-10-31)</h1>
+<blockquote>
+<p>目标:验证&quot;DeepSeek 主模型调用其他(免费)模型 + 被调模型能否联网搜索&quot;的各类开源方案,对比配置流程/多平台兼容性/稳定性/易用性。
+环境:云主机 Linux(node v? / python3.12 / dsh 0.2.1-rc.5),API key:智谱免费 + 魔塔免费。</p>
+</blockquote>
+<h2 id="结论速览">结论速览</h2>
+<table>
+	<thead>
+			<tr>
+					<th>#</th>
+					<th>方案</th>
+					<th>类型</th>
+					<th>实测结果</th>
+					<th>一句话评价</th>
+			</tr>
+	</thead>
+	<tbody>
+			<tr>
+					<td>1</td>
+					<td><strong>dsh-model-call(自研)</strong></td>
+					<td>dsh 插件</td>
+					<td>✅ 端到端可用</td>
+					<td>DeepSeek 自主调用智谱/魔塔,智谱免费模型可联网搜索;最贴需求</td>
+			</tr>
+			<tr>
+					<td>2</td>
+					<td>dsh-set-model 0.3.1</td>
+					<td>dsh 开源插件</td>
+					<td>❌ 启动冲突</td>
+					<td>与 dsh 0.2.1-rc.5 内核 prompt section 重名,无法加载</td>
+			</tr>
+			<tr>
+					<td>3</td>
+					<td>dsh-agent-conductor 0.3.1</td>
+					<td>dsh 开源插件</td>
+					<td>❌ 工具冲突</td>
+					<td>conductor_dispatch 与内核重复注册;主推 skill 形式</td>
+			</tr>
+			<tr>
+					<td>4</td>
+					<td>deepseek-multi-agent-plugin 1.0.1</td>
+					<td>Python 库</td>
+					<td>✅ 全通</td>
+					<td>DeepSeek 主管 + 智谱/魔塔下属,6 种协作策略,最贴合&quot;模型调用模型&quot;</td>
+			</tr>
+			<tr>
+					<td>5</td>
+					<td>chimera-deliberation 0.2.9</td>
+					<td>Python 库</td>
+					<td>✅ 全通(有降级)</td>
+					<td>DeepSeek 自动编排 3 模型并行 + 汇总;魔塔模型 id 有兼容坑</td>
+			</tr>
+			<tr>
+					<td>6</td>
+					<td>router-maestro 0.7.5</td>
+					<td>Python 网关</td>
+					<td>✅ 3 provider 全通</td>
+					<td>OpenAI 兼容统一网关,任何客户端可接智谱/魔塔/DeepSeek</td>
+			</tr>
+			<tr>
+					<td>7</td>
+					<td>external-agents 0.63.0</td>
+					<td>MCP/CLI</td>
+					<td>⚠️ 可用但不适配</td>
+					<td>面向 Claude Code/Codex 生态调度 20+ 厂商桶;无智谱/魔塔/DeepSeek 桶</td>
+			</tr>
+	</tbody>
+</table>
+<hr>
+<h2 id="方案-1dsh-model-call自研基准">方案 1:dsh-model-call(自研,基准)</h2>
+<ul>
+<li><strong>配置流程</strong>:插件文件放 <code>~/.dsh/profiles/web/node_modules/dsh-model-call/</code>,在 <code>cordis.patch.yml</code> insert 挂载;key 存 <code>~/.dsh/.credentials.yaml</code> refs。</li>
+<li><strong>兼容性</strong>:dsh web(Linux)已验证;纯 node 插件,机制跨平台(Windows/Termux 的 dsh 同样适用)。</li>
+<li><strong>稳定性</strong>:✅ 高。多轮浏览器端到端验证:DeepSeek 自主触发 <code>call_model·zhipu</code> → 智谱返回 → DeepSeek 整理,稳定。</li>
+<li><strong>易用性</strong>:✅ 对话里直接说&quot;用智谱免费模型…&ldquo;即可,DeepSeek 自主决定调用。</li>
+<li><strong>联网搜索</strong>:✅ 智谱免费模型(glm-4.5-flash/glm-5.3-flash)原生支持 web_search 工具,已升级插件自动开启;curl 实测搜到&quot;2026-10-31 武汉天气 25/16 多云&rdquo;。魔塔不支持 web_search(报错 function required),但支持 function calling;DeepSeek 主模型可先搜索再转喂魔塔。</li>
+<li><strong>来源</strong>:自研 <code>~/.dsh/profiles/web/node_modules/dsh-model-call/{index.js,package.json}</code></li>
+</ul>
+<h2 id="方案-2dsh-set-model-031john-walks-slow">方案 2:dsh-set-model 0.3.1(john-walks-slow)</h2>
+<ul>
+<li><strong>配置流程</strong>:<code>dsh plugin --profile web add github:john-walks-slow/dsh-set-model</code>;需先往 <code>pnpm-workspace.yaml</code> 的 <code>allowBuilds</code> 加 codeload key;再在 patch insert 挂载。</li>
+<li><strong>实测</strong>:装好后 dsh web 启动即报 <code>Error: prompt section &quot;dsh:model-policy&quot; is already registered</code>(与 dsh 0.2.1-rc.5 内核/system-prompt 段重名),插件无法加载。</li>
+<li><strong>兼容性</strong>:❌ 与当前 dsh 版本冲突(内核已注册同名 section)。</li>
+<li><strong>稳定性</strong>:低(每次启动报错)。</li>
+<li><strong>易用性</strong>:机制上是&quot;agent 通过 set_model/list_models 工具自主切换 provider/model 预设&quot;——最贴近&quot;自主调用&quot;语义,但当前版本不可用;需等插件适配新 dsh 或换旧版 dsh。</li>
+<li><strong>来源</strong>:GitHub john-walks-slow/dsh-set-model;DSH Plugin Store @lwmxiaobei 收录。</li>
+</ul>
+<h2 id="方案-3dsh-agent-conductor-031lionad-morotar">方案 3:dsh-agent-conductor 0.3.1(Lionad-Morotar)</h2>
+<ul>
+<li><strong>配置流程</strong>:<code>dsh plugin --profile web add dsh-agent-conductor</code>(npm 名);git 方式安装会因 ssh 协议失败,需走 npm 包。</li>
+<li><strong>实测</strong>:启动报 <code>tool &quot;conductor_dispatch&quot; is already registered</code>,工具无法注册;README 主推 <strong>skill 形式</strong>(复制 <code>skills/conductor</code> 目录,零依赖,模型按描述自动识别触发,stdout 直接成答案)。</li>
+<li><strong>兼容性</strong>:❌ 工具注册冲突;skill 形式未实测(需复制目录进 skills)。</li>
+<li><strong>稳定性</strong>:低(插件形式);skill 形式设计为 session-scoped、只读脚本,理论上更稳。</li>
+<li><strong>易用性</strong>:调度 11 个外部 agent CLI(Codex/Claude Code/OpenCode/Gemini/Kimi/Qwen 等),<strong>需要外部 CLI 已安装并登录</strong>;与本场景(智谱/魔塔 API)不直接匹配。</li>
+<li><strong>来源</strong>:GitHub Lionad-Morotar/dsh-agent-conductor(npm dsh-agent-conductor)。</li>
+</ul>
+<h2 id="方案-4deepseek-multi-agent-plugin-101pypi">方案 4:deepseek-multi-agent-plugin 1.0.1(PyPI)</h2>
+<ul>
+<li><strong>配置流程</strong>:<code>pip3 install deepseek-multi-agent-plugin</code>;代码里 <code>AgentCoordinator</code> + <code>Agent(name, provider, model, base_url, api_key)</code> + <code>register_agent</code>;策略函数 <code>run_broadcast / run_debate / run_relay / run_consensus</code> 等。</li>
+<li><strong>实测</strong>:✅
+<ul>
+<li>广播:DeepSeek + 智谱 glm-4.5-flash + 魔塔 Qwen3.5-27B <strong>三模型并行</strong>回答同一问题,全部正常。</li>
+<li>主管-下属:DeepSeek 先决策生成问题 → 智谱回答 → DeepSeek 总结,<strong>真实&quot;模型调用模型&quot;链路全通</strong>。</li>
+</ul>
+</li>
+<li><strong>兼容性</strong>:✅ 纯 Python 标准库 + OpenAI 兼容 HTTP,Linux/Windows/macOS/Termux(python3)均可;智谱/魔塔/DeepSeek 官方都走 <code>openai</code> provider(base_url 区别)。</li>
+<li><strong>稳定性</strong>:✅ 高(标准 chat/completions,带重试/退避);无 UI。</li>
+<li><strong>易用性</strong>:中——需写 Python 代码编排;有 6 种开箱策略 + 记忆/上下文策略。</li>
+<li><strong>来源</strong>:https://pypi.org/project/deepseek-multi-agent-plugin/</li>
+</ul>
+<h2 id="方案-5chimera-deliberation-029pypi">方案 5:chimera-deliberation 0.2.9(PyPI)</h2>
+<ul>
+<li><strong>配置流程</strong>:<code>pip3 install chimera-deliberation</code>;pydantic <code>ChimeraConfig(providers/models/api_keys/defaults)</code> + <code>Engine(cfg, LiteLLMGateway(cfg))</code>;<code>await engine.deliberate(prompt)</code>(async)。</li>
+<li><strong>实测</strong>:✅ Dispatcher(DeepSeek)自动设计 formation:3 个 worker(deepseek/智谱/魔塔)并行 + aggregator(DeepSeek)合并,输出最终一句话答案,含结构化 trace。</li>
+<li><strong>兼容性</strong>:⚠️ 依赖 litellm;魔塔模型 id <code>Qwen/Qwen3.5-27B</code> 在 litellm 被截断成 <code>Qwen3.5-27B</code> 导致 BadRequest(降级继续,最终答案仍出);DeepSeek/智谱正常。平台纯 Python。</li>
+<li><strong>稳定性</strong>:中——有 degraded 降级机制,但魔塔需要模型 id 别名处理。</li>
+<li><strong>易用性</strong>:中——配置结构多(formations/Defaults/api_keys),async API。</li>
+<li><strong>来源</strong>:https://pypi.org/project/chimera-deliberation/</li>
+</ul>
+<h2 id="方案-6router-maestro-075pypi">方案 6:router-maestro 0.7.5(PyPI)</h2>
+<ul>
+<li><strong>配置流程</strong>:<code>pip3 install router-maestro</code>;写 <code>~/.config/router-maestro/providers.json</code>(provider: baseURL + api_key_env + models);export key 环境变量;<code>router-maestro server start --port 8099 --api-key xxx</code>。</li>
+<li><strong>实测</strong>:✅ 网关启动(OpenAI 兼容 <code>http://127.0.0.1:8099/api/openai/v1</code>);经网关调用 <strong>智谱 glm-4.5-flash、魔塔 Qwen3.5-27B、官方 deepseek-chat 全部转发成功</strong>。</li>
+<li><strong>兼容性</strong>:✅ 跨平台;任何 OpenAI 兼容客户端(Claude Code/opencode/curl)都能指到网关用任意模型;配套 <code>config claude-code/codex/gemini</code> 生成对应 CLI 配置。</li>
+<li><strong>稳定性</strong>:✅ 高(标准 OpenAI API 转发)。</li>
+<li><strong>易用性</strong>:✅ 高——配置一次、标准 API;<strong>注意</strong>:这是&quot;统一网关/路由&quot;,不是&quot;模型调用模型&quot;(主模型仍需借助客户端/工具才能触发)。</li>
+<li><strong>来源</strong>:https://pypi.org/project/router-maestro/;本地配置文件 <code>/home/user/.config/router-maestro/providers.json</code>,网关进程运行中(8099)。</li>
+</ul>
+<h2 id="方案-7external-agents-0630npm-mcp">方案 7:external-agents 0.63.0(npm, MCP)</h2>
+<ul>
+<li><strong>配置流程</strong>:<code>npx @mrrlin-dev/external-agents</code>;提供 <code>external-agents</code>(CLI)与 <code>external-agents-mcp</code>(MCP server)两个 bin。</li>
+<li><strong>实测</strong>:<code>pick --n 5</code> 正常返回候选(gemini-3.6-flash、claude-sonnet-5、groq-gpt-oss-120b、openrouter-<em>、ollama-</em> 等 20+ 桶);<code>dispatch</code> 依赖外部 agent CLI(Codex/aider/agy 等)且需文件上下文,未完整跑通一条。</li>
+<li><strong>兼容性</strong>:⚠️ node 跨平台;桶全部为 Groq/OpenRouter/Ollama/Claude/Codex/Gemini 系,<strong>无智谱/魔塔/DeepSeek 桶</strong>,与本场景不适配。</li>
+<li><strong>稳定性</strong>:中——依赖各厂商登录态/key + 外部 CLI。</li>
+<li><strong>易用性</strong>:中——面向 Claude Code/Codex 生态的 MCP/CLI,不是给 dsh 用的。</li>
+<li><strong>来源</strong>:npm @mrrlin-dev/external-agents;https://lobehub.com/mcp/mrrlin-dev-external-agents</li>
+</ul>
+<hr>
+<h2 id="对比矩阵用户四维">对比矩阵(用户四维)</h2>
+<table>
+	<thead>
+			<tr>
+					<th>方案</th>
+					<th>配置流程</th>
+					<th>多平台兼容</th>
+					<th>稳定性</th>
+					<th>易用性</th>
+					<th>是否&quot;模型调用模型&quot;</th>
+			</tr>
+	</thead>
+	<tbody>
+			<tr>
+					<td>dsh-model-call(自研)</td>
+					<td>★★★★★ 一次挂载</td>
+					<td>★★★★★ dsh 全平台</td>
+					<td>★★★★★ 实测稳定</td>
+					<td>★★★★★ 对话直说</td>
+					<td>✅ 是(子模型调用)</td>
+			</tr>
+			<tr>
+					<td>dsh-set-model</td>
+					<td>★★ 装得上但冲突</td>
+					<td>✗ 当前 dsh 冲突</td>
+					<td>✗</td>
+					<td>—</td>
+					<td>✅ 是(切主模型)</td>
+			</tr>
+			<tr>
+					<td>dsh-agent-conductor</td>
+					<td>★★ 需 skill 形式</td>
+					<td>✗ 插件冲突</td>
+					<td>✗</td>
+					<td>★★★ 需外部CLI</td>
+					<td>✅ 是(调度外部agent)</td>
+			</tr>
+			<tr>
+					<td>deepseek-multi-agent-plugin</td>
+					<td>★★★★ pip+代码</td>
+					<td>★★★★★ 纯Python</td>
+					<td>★★★★★</td>
+					<td>★★★ 写代码</td>
+					<td>✅ 是(主管-下属)</td>
+			</tr>
+			<tr>
+					<td>chimera-deliberation</td>
+					<td>★★★ 配置多</td>
+					<td>★★★ 魔塔id坑</td>
+					<td>★★★ 有降级</td>
+					<td>★★★ async</td>
+					<td>✅ 是(自动编排)</td>
+			</tr>
+			<tr>
+					<td>router-maestro</td>
+					<td>★★★★ 配置+启动</td>
+					<td>★★★★★</td>
+					<td>★★★★★</td>
+					<td>★★★★ 标准API</td>
+					<td>⚠️ 网关(需客户端触发)</td>
+			</tr>
+			<tr>
+					<td>external-agents</td>
+					<td>★★★ npx</td>
+					<td>★★★ 依赖外部CLI</td>
+					<td>★★★</td>
+					<td>★★</td>
+					<td>✅ 是(调度外部agent)</td>
+			</tr>
+	</tbody>
+</table>
+<h2 id="建议">建议</h2>
+<ol>
+<li><strong>当前场景(dsh 对话里 DeepSeek 自主调用智谱/魔塔 + 联网)</strong>:保留自研 dsh-model-call——唯一端到端可用、智谱免费模型可联网搜索、零额外依赖。</li>
+<li><strong>想要框架级多模型编排(Python)</strong>:deepseek-multi-agent-plugin 主管-下属最贴合;chimera 适合&quot;自动编排 + 汇总&quot;。</li>
+<li><strong>想要统一网关给多个客户端用</strong>:router-maestro(已在 8099 运行,可直接当 OpenAI 兼容端点用)。</li>
+<li><strong>开源 dsh 插件</strong>:dsh-set-model/conductor 与 dsh 0.2.1-rc.5 冲突,等上游适配;conductor 的 skill 形式可后续试。</li>
+</ol>
+<h2 id="文件留存">文件留存</h2>
+<ul>
+<li>自研插件:<code>/home/user/.dsh/profiles/web/node_modules/dsh-model-call/</code></li>
+<li>实测 demo:<code>/home/user/Doubao/chats/38447447855447810/demo_multi_agent.py</code>、<code>demo_chimera.py</code></li>
+<li>router-maestro 配置:<code>/home/user/.config/router-maestro/providers.json</code>,日志 <code>/tmp/router-maestro.log</code></li>
+<li>本报告:<code>/home/user/Doubao/chats/38447447855447810/多模型调用方案实测报告.md</code></li>
+</ul>
+
+  </div>
+
+  <nav class="post-nav">
+    
+      <a class="prev" href="/posts/%E7%B1%BBdsh%E5%B7%A5%E5%85%B7%E6%A8%AA%E5%90%91%E5%AF%B9%E6%AF%94%E6%8A%A5%E5%91%8A_2026-11-01/">← 类 DSH 的 AI 开发/对话客户端横向对比（调研日：2026-11-01）</a>
+    
+    
+      <a class="next" href="/posts/code-server%E6%8F%92%E4%BB%B6%E4%B8%8E%E5%B7%A5%E5%85%B7%E9%AA%8C%E8%AF%81%E6%8A%A5%E5%91%8A/">code-server 多语言插件与工具链安装验证报告 →</a>
+    
+  </nav>
+</article>
+
+  </main><footer>
+  <span>© 2026 zjx 的手记 · 由 Hugo 生成</span>
+  <span>
+    <a href="https://github.com/zhoujiaxuan0729" target="_blank" rel="noopener">GitHub</a>
+    <a href="mailto:zhoujiaxuan45@outlook.com">邮件</a>
+  </span>
+</footer>
+</div><script>
+  
+  (function () {
+    var btn = document.getElementById('themeToggle');
+    if (!btn) return;
+    btn.addEventListener('click', function () {
+      var isDark = document.documentElement.classList.toggle('dark');
+      try { localStorage.setItem('theme', isDark ? 'dark' : 'light'); } catch (e) {}
+    });
+  })();
+</script>
+</body>
+</html>
