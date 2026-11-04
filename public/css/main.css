@@ -422,3 +422,12 @@ html.dark .post-body tr:nth-child(even) td {
 .game-btn-primary:hover { background: #92400E; border-color: #92400E; }
 .game-frame { width: 100%; height: 600px; border: 1px solid var(--line); border-radius: 10px; background: #000; margin: 10px 0 30px; }
 @media (max-width: 640px) { .game-frame { height: 400px; } }
+
+/* 修复主按钮文字被覆盖 */
+a.game-btn-primary,
+a.game-btn-primary:visited {
+  color: #FFFBEF;
+}
+a.game-btn-primary:hover {
+  color: #FFFBEF;
+}
